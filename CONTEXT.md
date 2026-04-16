@@ -12,3 +12,9 @@
 - ✅ Created `api` module stub (`main.py`).
 - ✅ Added placeholder `frontend/index.html`.
 - ✅ Created `data/` directory with `.gitkeep`.
+
+## Day 2 — Network Discovery & Persistence (Planned)
+- [ ] Implement `data/database.py` for SQLite management.
+- [ ] Update `discovery/scanner.py` with Scapy ARP logic.
+- [ ] Create detailed mock device profiles for Simulation Mode.
+- [ ] Build basic database migration script.

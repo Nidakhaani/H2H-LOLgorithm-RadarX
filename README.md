@@ -64,19 +64,10 @@ python run.py --api
 # Visit http://localhost:8000
 ```
 
-## 📸 7. Demo / Screenshots
-*Screenshots will be added as the dashboard is built (Day 6)*
-*Demo video link will be added on Day 8*
+## 📅 Day 2 Roadmap — Network Discovery & Persistence
+The goal for Day 2 is to move from static stubs to functional components for database management and live network discovery.
 
-## 👥 8. Team Members
-| Name | Role | GitHub |
-|------|------|--------|
-| [Your Name] | Backend + Core Engine | @github |
-| [Partner Name] | Frontend + Scanner | @github |
-
-## 🌐 9. Deployed Link
-*Live deployment link will be added on Day 7*
-
-## 🧪 10. What is Real vs. Simulated
-**100% Real:** All architecture, scoring logic, fingerprinting rules, FastAPI backend, frontend dashboard, database persistence, port scanning via socket/nmap.
-**Simulated in Demo Mode:** Network discovery returns pre-defined mock devices (8 realistic LAN devices) instead of sending live ARP packets — cloud servers cannot access a local network. The scanning logic itself is real and works when run locally with sudo on Linux.
+- 🗄️ **Database Schema**: Implement `data/database.py` with SQLite to store `devices` and `scans`.
+- 📡 **ARP Discovery**: Implement the `NetworkScanner` with Scapy for real LAN device detection.
+- 📡 **Enhanced Simulation**: Build a robust mock device generator for testing without network access.
+- ⚙️ **Config Integration**: Ensure all modules respect `.env` settings via `config.py`.
