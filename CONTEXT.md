@@ -13,8 +13,14 @@
 - ✅ Added placeholder `frontend/index.html`.
 - ✅ Created `data/` directory with `.gitkeep`.
 
-## Day 2 — Network Discovery & Persistence (Planned)
-- [ ] Implement `data/database.py` for SQLite management.
-- [ ] Update `discovery/scanner.py` with Scapy ARP logic.
-- [ ] Create detailed mock device profiles for Simulation Mode.
-- [ ] Build basic database migration script.
+## Day 2 — Core Scanner & Device Fingerprinter
+- ✅ Implemented `NetworkScanner` with 3-tier fallback (ARP/Nmap/Mock).
+- ✅ Built threaded port scanner with mock profile support.
+- ✅ Implemented `DeviceFingerprinter` with confidence-based classification.
+- ✅ Integrated risk detection engine with automated flag generation.
+- ✅ Created end-to-end terminal demo results.
+
+## Day 3 — Security Scorecard Engine (Planned)
+- [ ] Build A-F security grading engine.
+- [ ] Implement risk score calculation logic.
+- [ ] Generate remediation plans for detected risks.
