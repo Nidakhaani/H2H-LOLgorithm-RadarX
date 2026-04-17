@@ -27,6 +27,7 @@ RadarX is a lightweight, offline IoT security agent that makes your network's ri
 - 🏷️ Offline device fingerprinting — identifies cameras, printers, routers, smart devices
 - 🛡️ A–F security grading engine with numeric risk scoring (0–100)
 - 📋 Prioritized, plain-English remediation plan for every at-risk device
+- 🧾 Day 3 scorecard report in CLI: per-device grade/score/top finding + network security summary
 - 🗄️ SQLite persistence — tracks device history and scan sessions over time
 - 📊 Real-time polling dashboard with device cards and security report
 - 🔍 Port-level risk detection — flags Telnet, FTP, HTTP-only, RTSP, UPnP, MQTT
@@ -70,6 +71,33 @@ python run.py --api
   - 📡 3-tier fallback scanner (ARP, Nmap, Mock)
   - 🏷️ Parallel port scanner & Manufacturer lookup
   - 🔍 Device classification & Risk flag detection
-- [ ] **Day 3**: Security Scorecard Engine (Next)
+- [x] **Day 3**: Security Scorecard Engine
   - 🛡️ A-F Grading & Risk Scoring
   - 📋 Remediation Plan Generator
+  - 🧾 Network summary with top threats and devices needing action
+
+## ✅ Day 3 Implementation Summary
+- Built `discovery/scorecard.py` with a complete `SecurityScorecard` engine.
+- Added deterministic risk scoring (0-100), grade mapping (A-F), and security labels.
+- Added finding-level explanation output and prioritized remediation generation.
+- Integrated Day 3 execution into `run.py --demo` so the CLI now prints:
+  - Per-device scorecard table (`IP | Device Type | Grade | Score | Top Risk Finding`)
+  - Network posture summary (`total_devices`, grade distribution, top threats, worst grade, and action list)
+
+## 🎬 Demo Day 3 Features
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Run the complete Day 3 pipeline:
+   ```bash
+   python run.py --demo
+   ```
+3. Walk through the output live:
+   - Show scanner fallback flow (ARP -> Nmap -> Mock in restricted Windows environments).
+   - Highlight at least one high-risk device with grade `F` and explain why it scored high.
+   - Show the top remediation action generated for that device.
+   - End with `Network Summary` and explain:
+     - worst network grade
+     - top 3 threat types
+     - devices needing immediate action (grade D/F)

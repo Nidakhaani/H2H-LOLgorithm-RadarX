@@ -7,6 +7,7 @@ if sys.stdout.encoding.lower() != 'utf-8':
 
 try:
     from rich.console import Console
+    from rich.table import Table
 except ImportError:
     print("❌ Cannot import rich. Please run: pip install -r requirements.txt")
     # Graceful fallback so it doesn't crash if imported, but cli will fail later if not checked
@@ -15,6 +16,58 @@ except ImportError:
     Console = DummyConsole
 
 console = Console()
+
+
+def _grade_style(grade: str) -> str:
+    styles = {
+        "A": "[green]A[/green]",
+        "B": "[cyan]B[/cyan]",
+        "C": "[yellow]C[/yellow]",
+        "D": "[bright_red]D[/bright_red]",
+        "F": "[bold red]F[/bold red]",
+    }
+    return styles.get(grade, grade)
+
+
+def run_demo_pipeline() -> None:
+    from discovery.scanner import NetworkScanner
+    from discovery.fingerprinter import DeviceFingerprinter
+    from discovery.scorecard import SecurityScorecard
+
+    console.print("[bold yellow]Running DEMO mode (Simulation)[/bold yellow]")
+
+    scanner = NetworkScanner("192.168.1.0/24")
+    discovered_devices = scanner.scan()
+    for device in discovered_devices:
+        device["open_ports"] = scanner.scan_ports(device["ip"])
+
+    fingerprinter = DeviceFingerprinter()
+    fingerprinted_devices = fingerprinter.fingerprint_all(discovered_devices)
+
+    scorecard = SecurityScorecard()
+    graded_devices = scorecard.grade_all(fingerprinted_devices)
+    summary = scorecard.network_summary(graded_devices)
+
+    table = Table(title="RadarX - Day 3 Security Scorecard Demo")
+    table.add_column("IP", style="cyan")
+    table.add_column("Device Type", style="green")
+    table.add_column("Grade", justify="center")
+    table.add_column("Score", justify="right", style="magenta")
+    table.add_column("Top Risk Finding", style="yellow")
+
+    for device in graded_devices:
+        top_finding = device.get("risk_findings", [{"msg": "No findings"}])[0].get("msg", "No findings")
+        table.add_row(
+            device.get("ip", "Unknown"),
+            device.get("device_type", "Unknown"),
+            _grade_style(device.get("grade", "A")),
+            str(device.get("risk_score", 0)),
+            top_finding,
+        )
+
+    console.print(table)
+    console.print("[bold blue]Network Summary[/bold blue]")
+    console.print(summary)
 
 def print_banner():
     banner = r"""
@@ -39,9 +92,7 @@ def main():
         print_banner()
 
         if args.demo:
-            console.print("[bold yellow]🎭 Running in DEMO mode (Simulation)[/bold yellow]")
-            console.print("🔍 Simulated scanning... ✅ done.")
-            console.print("⚠️ Mock devices initialized.")
+            run_demo_pipeline()
         elif args.scan:
             console.print("[bold green]📡 Starting FULL LIVE SCAN...[/bold green]")
         elif args.api:
