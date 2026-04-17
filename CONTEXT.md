@@ -40,3 +40,25 @@
   - Scanner -> Fingerprinter -> Scorecard -> Rich table + network summary.
 - Verified Day 3 behavior on Windows fallback flow:
   - ARP/Nmap gracefully fallback to mock scan when platform tooling is unavailable.
+
+## Day 4 — SQLite Persistence + CLI Polish
+- ✅ Day 4 officially completed and validated end-to-end.
+- ✅ Added `DatabaseManager` in `data/database.py` using `sqlite3` only (no ORM).
+- ✅ Implemented DB initialization with automatic `data/` directory creation and two tables:
+  - `devices` for persistent per-device risk posture and scan counters.
+  - `scan_sessions` for historical scan run metadata and network-level grade snapshots.
+- ✅ Added robust upsert behavior keyed by `ip_address`:
+  - JSON fields are serialized on write and de-serialized on read.
+  - `last_seen` updates automatically and `scan_count` increments on conflict.
+- ✅ Upgraded `python run.py --demo` to Day 4 full pipeline:
+  - Scanner -> Fingerprinter -> Scorecard -> Database.
+  - Added stage-by-stage status lines with timings and polished rich output.
+  - Added Day 4 table format: IP, Device Type, Grade, Score, Risk Flag Count.
+  - Added network summary panel and total pipeline timing line.
+- ✅ Implemented `python run.py --report`:
+  - Loads existing DB data only (no new scan).
+  - Prints network security grade summary.
+  - Lists D/F devices with top findings.
+  - Prints numbered remediation checklist with CRITICAL/URGENT actions first.
+  - Handles empty database gracefully with:
+    `"No scan data found. Run --demo or --scan first."`

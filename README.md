@@ -27,8 +27,9 @@ RadarX is a lightweight, offline IoT security agent that makes your network's ri
 - 🏷️ Offline device fingerprinting — identifies cameras, printers, routers, smart devices
 - 🛡️ A–F security grading engine with numeric risk scoring (0–100)
 - 📋 Prioritized, plain-English remediation plan for every at-risk device
-- 🧾 Day 3 scorecard report in CLI: per-device grade/score/top finding + network security summary
+- 🧾 Day 4 polished CLI pipeline with stage timing + rich security output for demos
 - 🗄️ SQLite persistence — tracks device history and scan sessions over time
+- 📊 `--report` mode loads saved scan data and prints network grade, D/F devices, and remediation checklist
 - 📊 Real-time polling dashboard with device cards and security report
 - 🔍 Port-level risk detection — flags Telnet, FTP, HTTP-only, RTSP, UPnP, MQTT
 - 🎭 Simulation mode for demo environments where live scanning isn't possible
@@ -75,29 +76,42 @@ python run.py --api
   - 🛡️ A-F Grading & Risk Scoring
   - 📋 Remediation Plan Generator
   - 🧾 Network summary with top threats and devices needing action
+- [x] **Day 4**: SQLite Persistence + CLI Polish
+  - 🗄️ Added SQLite `DatabaseManager` (`devices` + `scan_sessions`)
+  - 💾 Persisted full demo pipeline (`Scanner -> Fingerprinter -> Scorecard -> Database`)
+  - 📊 Added `python run.py --report` for DB-backed security reporting
 
-## ✅ Day 3 Implementation Summary
-- Built `discovery/scorecard.py` with a complete `SecurityScorecard` engine.
-- Added deterministic risk scoring (0-100), grade mapping (A-F), and security labels.
-- Added finding-level explanation output and prioritized remediation generation.
-- Integrated Day 3 execution into `run.py --demo` so the CLI now prints:
-  - Per-device scorecard table (`IP | Device Type | Grade | Score | Top Risk Finding`)
-  - Network posture summary (`total_devices`, grade distribution, top threats, worst grade, and action list)
+## ✅ Day 4 Implementation Summary
+- Added `data/database.py` with a full `DatabaseManager` using `sqlite3` (no ORM).
+- Implemented schema initialization for persistent `devices` and `scan_sessions`.
+- Added upsert logic keyed by IP with JSON serialization for ports, risk flags, and remediation fields.
+- Upgraded `run.py --demo` to full Day 4 flow:
+  - `Scanner -> Fingerprinter -> Scorecard -> Database`
+  - Stage-by-stage status/timing output and polished rich table:
+    - `IP | Device Type | Grade | Score | Risk Flag Count`
+  - Network summary panel and total pipeline duration line.
+- Implemented `python run.py --report` to:
+  - Load existing DB scan data (without rescanning),
+  - Print network grade summary,
+  - List D/F devices with top findings,
+  - Print prioritized remediation checklist (URGENT first),
+  - Handle empty DB with: `No scan data found. Run --demo or --scan first.`
 
-## 🎬 Demo Day 3 Features
+## 🎬 Demo Day 4 Features
 1. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-2. Run the complete Day 3 pipeline:
+2. Run the complete Day 4 pipeline:
    ```bash
    python run.py --demo
    ```
-3. Walk through the output live:
+3. Show persistence-backed reporting:
+   ```bash
+   python run.py --report
+   ```
+4. Walk through the output live:
    - Show scanner fallback flow (ARP -> Nmap -> Mock in restricted Windows environments).
-   - Highlight at least one high-risk device with grade `F` and explain why it scored high.
-   - Show the top remediation action generated for that device.
-   - End with `Network Summary` and explain:
-     - worst network grade
-     - top 3 threat types
-     - devices needing immediate action (grade D/F)
+   - Highlight stage completion lines and timing for the full 4-stage pipeline.
+   - Show the saved table columns (`IP`, `Device Type`, `Grade`, `Score`, `Risk Flag Count`).
+   - Run `--report` to show D/F devices and prioritized remediation actions.
