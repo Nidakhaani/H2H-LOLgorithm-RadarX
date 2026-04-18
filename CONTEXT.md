@@ -62,3 +62,27 @@
   - Prints numbered remediation checklist with CRITICAL/URGENT actions first.
   - Handles empty database gracefully with:
     `"No scan data found. Run --demo or --scan first."`
+
+## Day 5 — FastAPI Backend
+- ✅ Implemented complete FastAPI backend in `api/main.py` for dashboard integration.
+- ✅ Added full API app setup:
+  - App title: `RadarX — IoT Discovery Agent`.
+  - CORS middleware allowing all origins/methods/headers (hackathon mode).
+  - Global `scan_state` tracking for polling (`active`, `progress`, `stage`, `devices_found`).
+- ✅ Added all required Day 5 endpoints:
+  - `GET /` serves `frontend/index.html`.
+  - `GET /api/health` returns status/version/scan state/demo mode.
+  - `POST /api/scan` triggers background scan and prevents concurrent runs.
+  - `GET /api/scan/status` returns live scan progress for polling.
+  - `GET /api/devices` returns risk-sorted DB-backed device list.
+  - `GET /api/devices/{ip_address}` returns one device or 404.
+  - `GET /api/summary` returns network scorecard summary.
+  - `GET /api/history` returns last 10 scan sessions.
+  - `DELETE /api/devices` clears only device rows and returns confirmation.
+- ✅ Implemented async background orchestration:
+  - `NetworkScanner -> DeviceFingerprinter -> SecurityScorecard -> DatabaseManager`.
+  - Stage-wise progress updates with user-facing status text.
+  - Session duration tracking and scan session persistence.
+- ✅ Added startup hook:
+  - Ensures DB tables exist at app startup.
+  - Prints API readiness message for local run confirmation.

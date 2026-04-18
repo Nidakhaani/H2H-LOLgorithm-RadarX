@@ -154,6 +154,11 @@ class DatabaseManager:
         )
         return [dict(row) for row in cursor.fetchall()]
 
+    def clear_devices(self):
+        """Delete all rows from devices table only."""
+        self.conn.execute("DELETE FROM devices")
+        self.conn.commit()
+
     def close(self):
         if self.conn:
             self.conn.close()

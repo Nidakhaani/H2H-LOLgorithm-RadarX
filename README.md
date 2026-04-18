@@ -80,6 +80,10 @@ python run.py --api
   - 🗄️ Added SQLite `DatabaseManager` (`devices` + `scan_sessions`)
   - 💾 Persisted full demo pipeline (`Scanner -> Fingerprinter -> Scorecard -> Database`)
   - 📊 Added `python run.py --report` for DB-backed security reporting
+- [x] **Day 5**: FastAPI Backend
+  - 🚀 Built full backend orchestration + scan status polling state
+  - 🔌 Added REST endpoints for health, scan trigger, devices, summary, and history
+  - 🧹 Added API delete endpoint for device-table reset during dashboard testing
 
 ## ✅ Day 4 Implementation Summary
 - Added `data/database.py` with a full `DatabaseManager` using `sqlite3` (no ORM).
@@ -96,6 +100,23 @@ python run.py --api
   - List D/F devices with top findings,
   - Print prioritized remediation checklist (URGENT first),
   - Handle empty DB with: `No scan data found. Run --demo or --scan first.`
+
+## ✅ Day 5 Implementation Summary
+- Implemented complete `FastAPI` backend in `api/main.py` with title `RadarX — IoT Discovery Agent`.
+- Added permissive CORS middleware for hackathon dashboard integration.
+- Implemented dashboard-ready API routes:
+  - `GET /` → serves `frontend/index.html`
+  - `GET /api/health`
+  - `POST /api/scan`
+  - `GET /api/scan/status`
+  - `GET /api/devices`
+  - `GET /api/devices/{ip_address}`
+  - `GET /api/summary`
+  - `GET /api/history`
+  - `DELETE /api/devices`
+- Added background scan pipeline execution with stage-based progress updates:
+  - Discovery -> Port Scan -> Fingerprinting -> Grading -> Database Persistence
+- Added startup initialization to auto-create DB tables and print API readiness status.
 
 ## 🎬 Demo Day 4 Features
 1. Install dependencies:
