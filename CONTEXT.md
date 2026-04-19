@@ -86,3 +86,64 @@
 - ✅ Added startup hook:
   - Ensures DB tables exist at app startup.
   - Prints API readiness message for local run confirmation.
+
+## Day 6 — Full Dashboard Frontend
+- ✅ Completely rewrote `frontend/index.html` with production-quality design.
+- ✅ Implemented tactical/cybersecurity dark theme:
+  - Background: #080C10 (near-black with cold blue tint)
+  - Primary accent: #00B4D8 (cyan radar/scan feel)
+  - Critical/High risk indicators with color hierarchy (red/orange/amber/green)
+  - Font: IBM Plex Mono (technical data) + Outfit (headings/body)
+- ✅ Built complete UI components:
+  - Header with RadarX branding, network health badge, and Scan button
+  - Scan progress bar with stage indicators (hidden by default, shows during scans)
+  - Stats row: Total Devices, Critical (F), High Risk (D), Secure (A-B)
+  - Two tabs: Devices and Security Report
+- ✅ Device Cards tab:
+  - Responsive grid layout (auto-fill, min-width 340px)
+  - Colored left border strip per grade (red/orange/amber/blue/green)
+  - Device emoji, type, grade badge with glow effect
+  - IP address (cyan, IBM Plex Mono)
+  - Manufacturer and open ports with color-coded pills
+  - Risk score bar (0-100) with grade-matched colors
+  - "View Details →" button for modal interaction
+- ✅ Security Report tab:
+  - Network Overview: Giant glowing grade letter + analysis summary
+  - Grade Distribution: Proportional bars for A/B/C/D/F grades
+  - Devices Requiring Immediate Action: Table of grade D/F devices with top remediations
+  - Full Remediation Checklist: Numbered list sorted by severity (CRITICAL → URGENT → MEDIUM)
+- ✅ Device Detail Modal:
+  - Full-screen overlay with close button
+  - 2-column grid: IP, MAC, Hostname, Manufacturer
+  - Large grade badge with risk score progress bar
+  - Risk flags with severity indicators
+  - Open ports with color-coded pills
+  - Full remediation steps for device
+  - Timeline: First Seen / Last Seen timestamps
+- ✅ Welcome State:
+  - Appears when no devices in DB
+  - Pulsing radar emoji animation (CSS only)
+  - "No devices discovered yet" → "Click Scan Network to begin"
+- ✅ JavaScript Functions:
+  - `loadData()` — fetches /api/devices and /api/summary in parallel, sorts by risk, renders all tabs
+  - `triggerScan()` — POST /api/scan, disables button, shows progress bar, starts polling
+  - `startPolling()` — GET /api/scan/status every 2s, updates progress bar and stage text, calls loadData() on completion
+  - `renderDevices()` — generates device grid with cards sorted by risk_score descending
+  - `renderReport()` — builds report sections: overview, grade dist, at-risk table, remediation checklist
+  - `openModal()` — creates full device detail overlay with all fields
+  - `closeModal()` — hides modal overlay
+  - Helper functions: `gradeToEmoji()`, `getDeviceEmoji()`, `getPortColor()`, `formatDate()`, `switchTab()`
+- ✅ Visual Polish:
+  - Subtle CSS radar sweep animation in header background
+  - Scan button pulses cyan when active
+  - Critical stat card pulses red when count > 0
+  - Grade badges glow with box-shadow matching color
+  - Hover effects on all interactive elements
+  - Responsive grid adapts to mobile (2 cols stats, 1 col devices)
+  - All colors carefully chosen for accessibility and visual hierarchy
+- ✅ All-in-one HTML file:
+  - No external frameworks (pure HTML5/CSS3/JS)
+  - Google Fonts import only (IBM Plex Mono + Outfit)
+  - Inline CSS and JavaScript for self-contained deployment
+- ✅ Footer:
+  - "Built for Hack2Hire 1.0 | T John Institute of Technology | Team RadarX | 2026"
