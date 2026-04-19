@@ -1,3 +1,10 @@
+"""
+RadarX CLI — Main Entry Point
+
+Provides command-line interface for running the IoT network discovery agent.
+Modes: --demo (simulation), --scan (real), --report (saved data), --api (dashboard).
+"""
+
 import argparse
 import codecs
 import sys

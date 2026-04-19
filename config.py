@@ -1,9 +1,16 @@
+"""
+RadarX Configuration Module
+
+Loads environment variables from .env file and provides sensible defaults
+for network range, database path, scan interval, and demo mode.
+"""
+
 import os
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass # In case dotenv is not installed yet
+    pass  # In case dotenv is not installed yet
 
 NETWORK_RANGE = os.getenv("NETWORK_RANGE", "192.168.1.0/24")
 DB_PATH = os.getenv("DB_PATH", "data/devices.db")

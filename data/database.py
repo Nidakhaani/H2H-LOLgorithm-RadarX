@@ -1,3 +1,10 @@
+"""
+Database Manager Module
+
+Handles SQLite persistence for devices and scan sessions.
+Provides upsert operations with JSON serialization for complex fields.
+"""
+
 import json
 import os
 import sqlite3

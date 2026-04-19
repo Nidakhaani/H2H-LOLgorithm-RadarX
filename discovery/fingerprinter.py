@@ -1,3 +1,10 @@
+"""
+Device Fingerprinter Module
+
+Analyzes open ports and manufacturer data to classify device types and
+detect security risk flags (Telnet, FTP, HTTP, RTSP, UPnP, MQTT).
+"""
+
 class DeviceFingerprinter:
     def __init__(self):
         self.risk_library = {

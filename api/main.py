@@ -1,7 +1,14 @@
+"""
+RadarX FastAPI Backend — IoT Network Discovery Agent
+
+Provides REST API endpoints for device scanning, fingerprinting, grading, and
+real-time dashboard polling. Supports both live scanning (local networks) and
+demo mode (simulation for cloud deployments).
+"""
+
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 import os
 import time
 import uuid
@@ -13,9 +20,6 @@ from discovery.scanner import NetworkScanner
 from discovery.scorecard import SecurityScorecard
 
 app = FastAPI(title="RadarX — IoT Discovery Agent", version=APP_VERSION)
-
-frontend_dir = os.path.join(os.path.dirname(__file__), "../frontend")
-app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
 
 # Global scan state tracking for frontend polling.
 scan_state = {"active": False, "progress": 0, "stage": "Idle", "devices_found": 0}
@@ -107,12 +111,12 @@ async def health_check():
 
 @app.post("/api/scan")
 async def start_scan(background_tasks: BackgroundTasks, payload: dict = None):
+    """Trigger a new scan — uses DEMO_MODE if configured."""
     if scan_state["active"]:
         return JSONResponse(status_code=409, content={"error": "Scan already in progress"})
 
+    # Force demo mode if configured in environment (cloud deployments have no local network)
     demo = DEMO_MODE
-    if payload and "demo" in payload:
-        demo = payload["demo"]
 
     scan_state.update({"active": True, "progress": 0, "stage": "Starting...", "devices_found": 0})
     background_tasks.add_task(run_background_scan, scan_state, demo)
@@ -182,6 +186,7 @@ async def clear_devices():
 
 @app.on_event("startup")
 async def startup_event():
+    """Initialize database and print startup message."""
     db = DatabaseManager()
     db.init_db()
     db.close()
@@ -191,4 +196,6 @@ async def startup_event():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Read PORT from environment (for Render/Railway), default to 8000 locally
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -1,3 +1,12 @@
+"""
+Network Scanner Module
+
+Discovers devices on the local network using a 3-tier fallback strategy:
+1. ARP broadcasts (live network)
+2. Nmap-based scanning (with nmap installed)
+3. Mock data (demo/simulation mode)
+"""
+
 import socket
 import time
 import datetime

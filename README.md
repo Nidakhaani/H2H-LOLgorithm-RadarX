@@ -1,162 +1,347 @@
 # 📡 RadarX — IoT Network Discovery Agent
-> Autonomous LAN Discovery, Device Fingerprinting & Security Grading — Offline, Private, Fast
+> Autonomous LAN Discovery, Device Fingerprinting & A–F Security Grading
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)]()
 [![SQLite](https://img.shields.io/badge/Database-SQLite-lightgrey)]()
 [![License](https://img.shields.io/badge/License-MIT-yellow)]()
+[![Hack2Hire](https://img.shields.io/badge/Built%20for-Hack2Hire%201.0-cyan)]()
+
+---
 
 ## 🚨 1. Problem Statement
-Every home and enterprise network is silently populated with IoT black boxes — IP cameras, smart printers, routers, smart bulbs, and unknown devices that ship with default passwords like admin/admin, leave dangerous ports like Telnet and FTP wide open, and run outdated firmware for years without updates. Most network owners have no idea what devices are on their network or what risks they carry. Existing security tools are either too complex for non-experts or require expensive licenses. The result: millions of devices act as open doors for attackers, completely undetected.
+
+Every home and enterprise network is silently populated with **IoT black boxes** — IP cameras, smart printers, network-attached storage, smart bulbs, thermostats, and tens of other unknown devices. Most of these devices ship with **factory default credentials** (admin/admin, root/root), leave dangerous ports like Telnet and FTP wide open, and run outdated firmware that hasn't been patched in years. They're connected to the network and largely forgotten.
+
+**The core problem:** Most network owners have zero visibility into what devices are actually on their network, what they're communicating with, or what security risks they carry. Whether you manage a home office, small business, or enterprise branch, the default state is *security blindness*. Existing tools are either too complex for non-experts, require expensive enterprise licenses, depend on cloud APIs, or simply don't work in offline/restricted environments.
+
+**The outcome:** Millions of devices act as silent doors for attackers — wide open, completely undetected, and unsecured. A single compromised IoT device can become a pivot point into the rest of the network.
+
+---
 
 ## 💡 2. Proposed Solution
-RadarX is a lightweight, offline IoT security agent that makes your network's risk profile visible in seconds. It autonomously discovers every device on the LAN, fingerprints each device's open ports and manufacturer signature, and grades every device on an A–F scale with a prioritized, plain-English remediation plan. No cloud, no API keys, no expert knowledge required — just run it and see exactly where you're exposed.
+
+**RadarX** makes your network's risk profile visible in seconds with a lightweight, fully offline IoT security agent. It requires no cloud API keys, no expert knowledge, and works on any LAN:
+
+1. **Discovers** every device on your network using ARP broadcasts + nmap + fallback simulation
+2. **Fingerprints** each device by analyzing open ports, manufacturer signatures, and service identification
+3. **Grades** every device on an A–F security scale with a numeric risk score (0–100)
+4. **Remediates** with a prioritized, plain-English action plan for every at-risk device
+
+The entire pipeline runs locally, offline, and in seconds. A non-technical network admin can understand the output immediately: see the red F-grade camera with port 23 (Telnet) open, read the plain-English fix ("Disable Telnet, enforce SSH only"), and act. No certifications required. No subscriptions. Just security visibility.
+
+---
 
 ## 🛠️ 3. Tech Stack
+
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Backend | Python 3.10, FastAPI | Core engine + REST API |
-| Network Scanning | Scapy, python-nmap | ARP discovery + port scanning |
-| Database | SQLite (sqlite3) | Device history persistence |
-| Frontend | HTML5, CSS3, Vanilla JS | Real-time dashboard |
-| CLI | argparse, rich | Terminal output |
-| Deployment | Render / Railway | Live hosting |
+| **Backend** | Python 3.10+, FastAPI | Core scanning engine + REST API |
+| **Network Scanning** | Scapy, python-nmap | ARP/IP discovery + port scanning |
+| **Database** | SQLite 3 | Device history + scan session persistence |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript | Real-time cloud-hosted dashboard |
+| **CLI** | argparse, rich | Terminal UI + formatted output |
+| **Serialization** | JSON | Device/port/remediation data exchange |
+| **Deployment** | Render / Railway | Live cloud hosting + public URL |
+
+---
 
 ## ✨ 4. Features
-- 📡 Live LAN scanning with ARP + nmap + simulation mode for demo environments
-- 🏷️ Offline device fingerprinting — identifies cameras, printers, routers, smart devices
-- 🛡️ A–F security grading engine with numeric risk scoring (0–100)
-- 📋 Prioritized, plain-English remediation plan for every at-risk device
-- 🧾 Day 4 polished CLI pipeline with stage timing + rich security output for demos
-- 🗄️ SQLite persistence — tracks device history and scan sessions over time
-- 📊 `--report` mode loads saved scan data and prints network grade, D/F devices, and remediation checklist
-- 📊 Real-time polling dashboard with device cards and security report
-- 🔍 Port-level risk detection — flags Telnet, FTP, HTTP-only, RTSP, UPnP, MQTT
-- 🎭 Simulation mode for demo environments where live scanning isn't possible
+
+- 📡 **Live LAN Scanning** — ARP/nmap auto-discovery with 3-tier fallback for restricted environments
+- 🏷️ **Offline Device Fingerprinting** — Identifies cameras, printers, routers, smart appliances by port signatures
+- 🛡️ **A–F Security Grading** — Deterministic risk grades (A=secure, F=critical) with numeric risk scores 0–100
+- 📋 **Plain-English Remediation** — Prioritized action plans per device (CRITICAL → URGENT → MEDIUM)
+- 🧾 **Multi-Mode CLI** — `--demo` (simulation), `--scan` (real), `--report` (saved data), `--api` (dashboard)
+- 🗄️ **SQLite Persistence** — Tracks device history + scan sessions over time
+- 📊 **Real-Time Dashboard** — Web UI with device cards, security report, progress polling
+- 🔍 **Port-Level Risk Detection** — Flags insecure services (Telnet, FTP, HTTP, RTSP, UPnP, MQTT)
+- 🎭 **Demo Mode** — Full simulation for testing without a live network (perfect for cloud/CI)
+
+---
 
 ## 🏗️ 5. Architecture / Flow
+
 ```
-LAN Network
-    ↓
-[NetworkScanner] → ARP/nmap discovery → IP, MAC, Hostname, Open Ports
-    ↓
-[DeviceFingerprinter] → Port + manufacturer analysis → Device type + Risk flags
-    ↓
-[SecurityScorecard] → Risk scoring → A–F grade + Remediation plan
-    ↓
-[DatabaseManager] → SQLite → Persist device history + scan sessions
-    ↓
-[FastAPI Backend] → REST endpoints → /api/scan, /api/devices, /api/summary
-    ↓
-[HTML Dashboard] → Real-time polling → Device cards + Security report
+╔═════════════╗
+║ LAN Network ║
+╚══════╤══════╝
+       ↓
+┌──────────────────────────────────────┐
+│  [NetworkScanner]                    │
+│  ARP broadcasts → IP discovery       │
+│  nmap port scans → open ports list   │
+│  Mock simulation for demo/cloud      │
+└──────────────────────┬───────────────┘
+                       ↓
+┌──────────────────────────────────────┐
+│  [DeviceFingerprinter]               │
+│  Port analysis → device type         │
+│  Manufacturer lookup                 │
+│  Risk flag detection (Telnet/FTP)    │
+└──────────────────────┬───────────────┘
+                       ↓
+┌──────────────────────────────────────┐
+│  [SecurityScorecard]                 │
+│  Risk → A–F grade mapping            │
+│  Remediation plan generation         │
+│  Network summary (fleet-level)       │
+└──────────────────────┬───────────────┘
+                       ↓
+┌──────────────────────────────────────┐
+│  [DatabaseManager]                   │
+│  SQLite upsert → device persistence  │
+│  Scan session history tracking       │
+└──────────────────────┬───────────────┘
+                       ↓
+┌──────────────────────────────────────┐
+│  [FastAPI Backend]                   │
+│  REST endpoints for dashboard        │
+│  Async background scan orchestration │
+└──────────────────────┬───────────────┘
+                       ↓
+┌──────────────────────────────────────┐
+│  [HTML5 Dashboard]                   │
+│  Real-time polling → device cards    │
+│  Security report + remediation list  │
+└──────────────────────────────────────┘
 ```
+
+---
 
 ## 🚀 6. Setup Instructions
+
+### Prerequisites
+- **Python 3.10** or higher
+- **pip** package manager
+- **git** (to clone the repo)
+- *Optional:* **nmap** (apt install nmap on Linux, brew install nmap on macOS, Windows nmap.org)
+
+### Step 1: Clone & Install
 ```bash
-git clone https://github.com/YOUR_REPO_URL
+git clone https://github.com/Nidakhaani/H2H-LOLgorithm-RadarX.git
 cd radarx
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env — set NETWORK_RANGE to your subnet (e.g., 192.168.1.0/24)
-python run.py --demo    # Simulation mode, no sudo needed
-# For real scanning (Linux only):
-sudo python run.py --scan
-# Start the dashboard:
-python run.py --api
-# Visit http://localhost:8000
 ```
 
-## 📅 Roadmap progress
-- [x] **Day 1**: Project Scaffold & Tech Stack
-- [x] **Day 2**: Core Scanner & Device Fingerprinter
-  - 📡 3-tier fallback scanner (ARP, Nmap, Mock)
-  - 🏷️ Parallel port scanner & Manufacturer lookup
-  - 🔍 Device classification & Risk flag detection
-- [x] **Day 3**: Security Scorecard Engine
-  - 🛡️ A-F Grading & Risk Scoring
-  - 📋 Remediation Plan Generator
-  - 🧾 Network summary with top threats and devices needing action
-- [x] **Day 4**: SQLite Persistence + CLI Polish
-  - 🗄️ Added SQLite `DatabaseManager` (`devices` + `scan_sessions`)
-  - 💾 Persisted full demo pipeline (`Scanner -> Fingerprinter -> Scorecard -> Database`)
-  - 📊 Added `python run.py --report` for DB-backed security reporting
-- [x] **Day 5**: FastAPI Backend
-  - 🚀 Built full backend orchestration + scan status polling state
-  - 🔌 Added REST endpoints for health, scan trigger, devices, summary, and history
-  - 🧹 Added API delete endpoint for device-table reset during dashboard testing
-- [x] **Day 6**: Full Dashboard Frontend
-  - 🎨 Production-quality tactical/cybersecurity dark theme
-  - 📊 Device cards grid with risk-sorted display
-  - 📈 Real-time scan progress bar with stage indicators
-  - 🛡️ Security report with grade distribution and remediation checklist
-  - 🔍 Device detail modal with all metadata and timeline
-  - 📱 Fully responsive design (mobile, tablet, desktop)
+### Step 2: Environment Configuration
+```bash
+cp .env.example .env
+# Edit .env — set NETWORK_RANGE to your subnet (e.g., 192.168.1.0/24)
+nano .env  # or use your editor
+```
 
-## ✅ Day 4 Implementation Summary
-- Added `data/database.py` with a full `DatabaseManager` using `sqlite3` (no ORM).
-- Implemented schema initialization for persistent `devices` and `scan_sessions`.
-- Added upsert logic keyed by IP with JSON serialization for ports, risk flags, and remediation fields.
-- Upgraded `run.py --demo` to full Day 4 flow:
-  - `Scanner -> Fingerprinter -> Scorecard -> Database`
-  - Stage-by-stage status/timing output and polished rich table:
-    - `IP | Device Type | Grade | Score | Risk Flag Count`
-  - Network summary panel and total pipeline duration line.
-- Implemented `python run.py --report` to:
-  - Load existing DB scan data (without rescanning),
-  - Print network grade summary,
-  - List D/F devices with top findings,
-  - Print prioritized remediation checklist (URGENT first),
-  - Handle empty DB with: `No scan data found. Run --demo or --scan first.`
+**Key `.env` variables:**
+- `NETWORK_RANGE=192.168.1.0/24` — your local network CIDR (adjust this!)
+- `DB_PATH=data/devices.db` — where scan history is stored
+- `DEMO_MODE=true` — set to `false` for real scanning (Linux + sudo required)
 
-## ✅ Day 5 Implementation Summary
-- Implemented complete `FastAPI` backend in `api/main.py` with title `RadarX — IoT Discovery Agent`.
-- Added permissive CORS middleware for hackathon dashboard integration.
-- Implemented dashboard-ready API routes:
-  - `GET /` → serves `frontend/index.html`
-  - `GET /api/health`
-  - `POST /api/scan`
-  - `GET /api/scan/status`
-  - `GET /api/devices`
-  - `GET /api/devices/{ip_address}`
-  - `GET /api/summary`
-  - `GET /api/history`
-  - `DELETE /api/devices`
-- Added background scan pipeline execution with stage-based progress updates:
-  - Discovery -> Port Scan -> Fingerprinting -> Grading -> Database Persistence
-- Added startup initialization to auto-create DB tables and print API readiness status.
+### Step 3: Run Demo Mode (No Sudo, No Local Network Required)
+```bash
+python run.py --demo
+```
 
-## ✅ Day 6 Implementation Summary
-- Completely rewrote `frontend/index.html` as a single-file, framework-free dashboard.
-- Designed with tactical cybersecurity dark theme: #080C10 background, #00B4D8 cyan accents, color-coded risk levels.
-- Implemented responsive device grid with color-coded grade borders and risk score visualization.
-- Added two-tab interface: Devices (card grid) and Security Report (overview + at-risk table + remediation checklist).
-- Built device detail modal with IP/MAC/Hostname, risk flags, open ports, remediation steps, and timeline.
-- Integrated real-time scan progress bar with stage-based updates (discovering → port scanning → fingerprinting → grading → storing).
-- Implemented full JavaScript pipeline:
-  - `loadData()` fetches /api/devices + /api/summary in parallel, sorts by risk, renders both tabs.
-  - `triggerScan()` initiates POST /api/scan, shows progress bar, starts polling.
-  - `startPolling()` polls /api/scan/status every 2s until scan completes, updates progress, calls loadData().
-  - `renderDevices()` / `renderReport()` render device grid and security report respectively.
-  - `openModal()` / `closeModal()` manage device detail overlay.
-  - Welcome state + timestamp formatting for empty DB and date display.
-- Added subtle CSS animations: header radar sweep, button pulse (cyan), critical stat pulse (red), radar emoji pulse (welcome state).
-- Verified responsive layout adapts to mobile (stacked layout, single-column grids, smaller fonts).
+**Output:** Rich-formatted table with 8 simulated IoT devices, grades, risk scores, and remediation plans.
 
-## 🎬 Demo Day 4 Features
-1. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Run the complete Day 4 pipeline:
-   ```bash
-   python run.py --demo
-   ```
-3. Show persistence-backed reporting:
-   ```bash
-   python run.py --report
-   ```
-4. Walk through the output live:
-   - Show scanner fallback flow (ARP -> Nmap -> Mock in restricted Windows environments).
-   - Highlight stage completion lines and timing for the full 4-stage pipeline.
-   - Show the saved table columns (`IP`, `Device Type`, `Grade`, `Score`, `Risk Flag Count`).
-   - Run `--report` to show D/F devices and prioritized remediation actions.
+### Step 4: Real Scanning (Linux Only)
+```bash
+# Only works on Linux with nmap + arp-scan tools installed
+sudo python run.py --scan
+```
+
+### Step 5: Report Mode (Load Saved Scans)
+```bash
+# Loads from database — shows network grade, D/F devices, remediation checklist
+python run.py --report
+```
+
+### Step 6: Start the API + Dashboard
+```bash
+python run.py --api
+# Visit http://localhost:8000 in your browser
+```
+
+---
+
+## 📸 7. Demo / Screenshots
+
+### Dashboard Home
+The main RadarX dashboard shows a dark-themed interface with:
+- **Header:** Glowing "RadarX" logo, network health badge (A–F grade), Scan button
+- **Stats Row:** Total Devices, Critical (F-grade) count, High Risk (D-grade) count, Secure (A–B) count
+- **Device Grid:** Color-coded cards (red border for F, orange for D, etc.) with emoji, device name, ID, manufacturer, open ports, and risk score bar
+- **Welcome State:** "No devices yet" message with pulsing radar emoji when database is empty
+
+### Device Detail Modal
+Click "View Details" on any card to see:
+- IP, MAC, Hostname, Manufacturer
+- Large grade badge (A–F) with risk score progress bar
+- All open ports with security context (Telnet = critical red)
+- Full remediation steps in priority order
+- First Seen / Last Seen timestamps
+
+### Security Report Tab
+A comprehensive overview showing:
+- **Network Overview:** Giant glowing A–F grade + summary text
+- **Grade Distribution:** Proportional progress bars for all grades (A, B, C, D, F)
+- **Devices Requiring Action:** Table of all F/D-grade devices
+- **Full Remediation Checklist:** All actions sorted by severity (CRITICAL → URGENT → MEDIUM)
+
+### Real-Time Scanning
+When you click "Scan Network," a progress bar appears:
+- 📡 Discovering devices...
+- 🏷️ Fingerprinting devices...
+- 🛡️ Grading security risk...
+- 💾 Saving to database...
+- ✅ Complete — X devices scanned
+
+### Video Demo
+[Hack2Hire Final Presentation Video — April 22, 2026]
+(Upload to YouTube or link internal demo video)
+
+---
+
+## 👥 8. Team Members
+
+| Role | Name | GitHub |
+|------|------|--------|
+| **Project Lead & Full-Stack Developer** | Nida Khaani | [@Nidakhaani](https://github.com/Nidakhaani) |
+| **Cybersecurity & Grading Logic** | Nida Khaani | [@Nidakhaani](https://github.com/Nidakhaani) |
+
+**Team:** RadarX — Built for T John Institute of Technology Hack2Hire 1.0, April 2026
+
+---
+
+## 🌐 9. Deployed Link
+
+**Live Demo:** https://radarx-iot-agent.onrender.com/
+
+*Note: The deployed version runs in DEMO_MODE=true (cloud servers have no local network to scan). Click "Scan Network" to see simulated device data, full grading, remediation plans, and the live dashboard.*
+
+**How to Deploy Your Own:**
+
+### Option 1: Render.com
+1. Push code to GitHub
+2. Go to https://dashboard.render.com
+3. New → Web Service
+4. Connect GitHub repo → Select this repo
+5. Runtime: Python 3.10
+6. Build cmd: `pip install -r requirements.txt`
+7. Start cmd: `uvicorn api.main:app --host 0.0.0.0 --port $PORT`
+8. Env vars: Set `DEMO_MODE=true`
+9. Deploy!
+
+### Option 2: Railway.app
+1. Go to https://railway.app
+2. New Project → Deploy from GitHub
+3. Select this repo
+4. Railway auto-detects Python
+5. Set env var: `DEMO_MODE=true`
+6. Deploy!
+
+---
+
+## 🧪 10. What is Real vs. Simulated
+
+### Real Implementation (100% Production Code)
+✅ **All Python modules** — Scanner, Fingerprinter, Scorecard, DatabaseManager  
+✅ **Risk scoring logic** — Deterministic A–F grading algorithm with weighted penalties  
+✅ **Fingerprinting rules** — Port → device type mapping, manufacturer detection  
+✅ **FastAPI backend** — All 9 REST endpoints fully functional  
+✅ **SQLite database** — Real persistence with full schema (devices + scan_sessions)  
+✅ **HTML5 dashboard** — Production-quality responsive UI, no frameworks  
+✅ **Port scanning** — Real socket-based scans + nmap integration  
+✅ **Remediation engine** — Real plain-English action plan generation  
+
+### Simulated in Demo Mode
+🎭 **Network discovery** — Returns 8 pre-defined mock devices instead of live ARP broadcasts  
+🎭 **Device data** — Realistic IoT device profiles (cameras, printers, routers, etc.)  
+🎭 **Why simulated?** Cloud servers (Render/Railway) cannot access a local LAN — they have no broadcast network. Demo mode allows full end-to-end testing of the grading + dashboard pipeline without network infrastructure.
+
+### How to Know Which Mode You're In
+```bash
+# Local demo (no scanning, just simulation)
+python run.py --demo
+
+# Real scanning (Linux only, requires nmap + root)
+sudo python run.py --scan
+
+# Cloud deployment (inherits DEMO_MODE=true from render.yaml/railway.json)
+# Automatically runs mock scan on every POST /api/scan
+```
+
+---
+
+## 📋 Requirements
+
+See `requirements.txt`:
+```
+scapy
+python-nmap
+python-dotenv
+fastapi
+uvicorn
+rich
+requests
+python-multipart
+```
+
+---
+
+## 📚 Documentation Files
+
+- **[CONTEXT.md](CONTEXT.md)** — Detailed dev notes for all 7 days
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — How to contribute + dev setup
+- **[LICENSE](LICENSE)** — MIT License, free to use/modify
+
+---
+
+## 🛠️ Troubleshooting
+
+**"ModuleNotFoundError: No module named 'scapy'"**
+→ Run `pip install -r requirements.txt`
+
+**"Scan shows 0 devices on real hardware"**
+→ Verify NETWORK_RANGE in `.env` matches your actual subnet (e.g., 10.0.0.0/24 not 192.168.1.0/24)  
+→ On Linux, ensure running with `sudo`
+
+**"Dashboard won't load"**
+→ Ensure `python run.py --api` is running  
+→ Check http://localhost:8000/api/health returns `{"status": "ok"}`
+
+**"Database corruption"**
+→ Delete `data/devices.db` and recreate: `python run.py --demo` will reinit schema
+
+---
+
+## 🎓 Learning Outcomes
+
+This project demonstrates:
+- **Network security fundamentals** — ARP discovery, port scanning, risk assessment
+- **Full-stack development** — Python backend, REST APIs, frontend dashboard
+- **Software architecture** — Modular class design, separation of concerns
+- **Database design** — SQLite schema, JSON serialization, upsert patterns
+- **Real-time web UI** — Polling, progress tracking, responsive design
+- **Cloud deployment** — Docker-compatible, environment-driven config
+- **Cybersecurity best practices** — Risk scoring, remediation planning, threat modeling
+
+---
+
+## 📝 License
+
+MIT License — See [LICENSE](LICENSE) for full text.  
+**Copyright (c) 2026 Nida Khaani & Team RadarX**
+
+---
+
+## 🎉 Acknowledgments
+
+Built during **Hack2Hire 1.0** (April 2026) at **T John Institute of Technology**, Bengaluru.
+
+**Theme:** Cybersecurity  
+**Inspiration:** The massive blindspot in home/small-business network security  
+**Vision:** Make IoT security visible, actionable, and free for everyone
+
+---
+
+**👉 [Deploy Now](https://dashboard.render.com) | [View on GitHub](https://github.com/Nidakhaani/H2H-LOLgorithm-RadarX) | [Hack2Hire](https://hack2hire.in)**
