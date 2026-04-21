@@ -24,8 +24,6 @@ class DatabaseManager:
         self.init_db()
 
     def init_db(self):
-        """Initialize database schema with migration support."""
-        # Create devices table
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS devices (
@@ -42,20 +40,10 @@ class DatabaseManager:
                 remediation TEXT DEFAULT '[]',
                 first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                scan_count INTEGER DEFAULT 1,
-                current_scan_id INTEGER DEFAULT NULL
+                scan_count INTEGER DEFAULT 1
             );
             """
         )
-        
-        # Migrate existing table: add current_scan_id if not exists
-        try:
-            self.conn.execute("ALTER TABLE devices ADD COLUMN current_scan_id INTEGER DEFAULT NULL;")
-        except sqlite3.OperationalError:
-            # Column already exists, which is fine
-            pass
-        
-        # Create scan_sessions table
         self.conn.execute(
             """
             CREATE TABLE IF NOT EXISTS scan_sessions (
@@ -72,8 +60,7 @@ class DatabaseManager:
         )
         self.conn.commit()
 
-    def upsert_device(self, device: dict, scan_session_id: int = None):
-        """Upsert device with optional scan session tracking."""
+    def upsert_device(self, device: dict):
         ip_address = device.get("ip", "") or device.get("ip_address", "")
         if not ip_address:
             return
@@ -95,8 +82,8 @@ class DatabaseManager:
             """
             INSERT INTO devices (
                 ip_address, mac_address, hostname, manufacturer, device_type,
-                open_ports, risk_flags, risk_score, grade, remediation, current_scan_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                open_ports, risk_flags, risk_score, grade, remediation
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(ip_address) DO UPDATE SET
                 mac_address=excluded.mac_address,
                 hostname=excluded.hostname,
@@ -108,8 +95,7 @@ class DatabaseManager:
                 grade=excluded.grade,
                 remediation=excluded.remediation,
                 last_seen=CURRENT_TIMESTAMP,
-                scan_count=devices.scan_count + 1,
-                current_scan_id=excluded.current_scan_id
+                scan_count=devices.scan_count + 1
             """,
             (
                 ip_address,
@@ -122,19 +108,19 @@ class DatabaseManager:
                 int(device.get("risk_score", 0)),
                 device.get("grade", "C"),
                 remediation,
-                scan_session_id,
             ),
         )
         self.conn.commit()
 
-    def save_scan_session(self, devices: list[dict], duration: float, method: str) -> int:
-        """Save scan session and mark devices as current."""
+    def save_scan_session(self, devices: list[dict], duration: float, method: str):
         critical_count = sum(1 for d in devices if d.get("grade") == "F")
         high_risk_count = sum(1 for d in devices if d.get("grade") == "D")
         network_grade = self._network_grade(devices)
 
-        # Create the scan session first to get its ID
-        cursor = self.conn.execute(
+        for device in devices:
+            self.upsert_device(device)
+
+        self.conn.execute(
             """
             INSERT INTO scan_sessions (
                 scan_method, total_devices, critical_count, high_risk_count,
@@ -151,32 +137,15 @@ class DatabaseManager:
             ),
         )
         self.conn.commit()
-        scan_session_id = cursor.lastrowid
-
-        # Upsert all devices with this scan_session_id
-        for device in devices:
-            self.upsert_device(device, scan_session_id)
-
-        return scan_session_id
-
-    def get_latest_scan_session_id(self) -> int:
-        """Get the most recent scan session ID."""
-        cursor = self.conn.execute(
-            "SELECT id FROM scan_sessions ORDER BY id DESC LIMIT 1"
-        )
-        row = cursor.fetchone()
-        return row["id"] if row else None
 
     def get_all_devices(self) -> list[dict]:
-        """Get all devices, computing is_current flag."""
-        latest_scan_id = self.get_latest_scan_session_id()
         cursor = self.conn.execute(
             """
             SELECT * FROM devices
             ORDER BY risk_score DESC, ip_address ASC
             """
         )
-        return [self._row_to_device(row, latest_scan_id) for row in cursor.fetchall()]
+        return [self._row_to_device(row) for row in cursor.fetchall()]
 
     def get_high_risk_devices(self) -> list[dict]:
         cursor = self.conn.execute(
@@ -186,8 +155,7 @@ class DatabaseManager:
             ORDER BY risk_score DESC, ip_address ASC
             """
         )
-        latest_scan_id = self.get_latest_scan_session_id()
-        return [self._row_to_device(row, latest_scan_id) for row in cursor.fetchall()]
+        return [self._row_to_device(row) for row in cursor.fetchall()]
 
     def get_scan_history(self, limit: int = 10) -> list[dict]:
         cursor = self.conn.execute(
@@ -209,8 +177,7 @@ class DatabaseManager:
         if self.conn:
             self.conn.close()
 
-    def _row_to_device(self, row: sqlite3.Row, latest_scan_id: int = None) -> dict[str, Any]:
-        """Convert database row to device dict with is_current flag."""
+    def _row_to_device(self, row: sqlite3.Row) -> dict[str, Any]:
         raw_ports = json.loads(row["open_ports"] or "{}")
         # Normalize: always store as {int: str} internally but return both forms
         if isinstance(raw_ports, dict):
@@ -219,10 +186,6 @@ class DatabaseManager:
             ports_dict = {}
         # Frontend expects a flat list of port numbers
         ports_list = sorted(ports_dict.keys())
-
-        # Determine if device is currently connected (found in latest scan)
-        current_scan_id = row["current_scan_id"]
-        is_current = current_scan_id == latest_scan_id if latest_scan_id else False
 
         return {
             "id": row["id"],
@@ -242,8 +205,6 @@ class DatabaseManager:
             "first_seen": row["first_seen"],
             "last_seen": row["last_seen"],
             "scan_count": row["scan_count"],
-            "current_scan_id": current_scan_id,
-            "is_current": is_current,
         }
 
     def _network_grade(self, devices: list[dict]) -> str:

@@ -68,6 +68,8 @@ async def run_background_scan(state: dict, demo: bool = True):
         state.update({"progress": 85, "stage": "💾 Saving to database..."})
         db = DatabaseManager()
         db.init_db()
+        for device in devices:
+            db.upsert_device(device)
         duration = time.time() - start_time
         method = devices[0].get("scan_method", "mock") if devices else "mock"
         if demo:

@@ -501,79 +501,6 @@
             color: #080C10;
         }
 
-        /* Device History & Status */
-        .devices-section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #00B4D8;
-            margin-bottom: 15px;
-            padding: 10px 0;
-            border-bottom: 2px solid #1C2333;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .offline-grid {
-            opacity: 0.7;
-        }
-
-        .device-card.offline-device {
-            opacity: 0.8;
-            border-color: #1C2333;
-        }
-
-        .device-card.offline-device:hover {
-            opacity: 1;
-        }
-
-        .device-badges {
-            display: flex;
-            gap: 8px;
-            padding: 8px 15px;
-            background: #0A0E14;
-            border-bottom: 1px solid #1C2333;
-            flex-wrap: wrap;
-        }
-
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-block;
-        }
-
-        .status-badge.current {
-            background: rgba(46, 213, 115, 0.2);
-            color: #2ED573;
-            border: 1px solid #2ED573;
-        }
-
-        .status-badge.offline {
-            background: rgba(139, 158, 199, 0.2);
-            color: #8B9EC7;
-            border: 1px solid #8B9EC7;
-        }
-
-        .scan-count-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: rgba(0, 180, 216, 0.2);
-            color: #00B4D8;
-            border: 1px solid #00B4D8;
-            display: inline-block;
-        }
-
         /* ─────────────────────────────────────────────── */
         /* SECURITY REPORT */
         /* ─────────────────────────────────────────────── */
@@ -1279,77 +1206,42 @@
                 return;
             }
 
-            // Split devices into current and offline
-            const currentDevices = devices.filter(d => d.is_current);
-            const offlineDevices = devices.filter(d => !d.is_current);
+            let html = '<div class="device-grid">';
+            devices.forEach(device => {
+                const emoji = getDeviceEmoji(device.device_type);
+                const ports = device.open_ports || [];
+                const portHtml = ports.slice(0, 8).map(p => {
+                    const color = getPortColor(p);
+                    return `<div class="port-pill ${color}">${p}</div>`;
+                }).join('');
 
-            let html = '';
-
-            // Currently Connected section
-            if (currentDevices.length > 0) {
-                html += '<div class="devices-section"><div class="section-title">🟢 Currently Connected (' + currentDevices.length + ')</div>';
-                html += '<div class="device-grid">';
-                currentDevices.forEach(device => {
-                    html += renderDeviceCard(device);
-                });
-                html += '</div></div>';
-            }
-
-            // Previously Connected section
-            if (offlineDevices.length > 0) {
-                html += '<div class="devices-section"><div class="section-title">⚫ Previously Connected (' + offlineDevices.length + ')</div>';
-                html += '<div class="device-grid offline-grid">';
-                offlineDevices.forEach(device => {
-                    html += renderDeviceCard(device, true);
-                });
-                html += '</div></div>';
-            }
-
+                html += `
+                    <div class="device-card grade-${device.grade.toLowerCase()}" onclick="openModal('${device.ip_address}')">
+                        <div class="device-header">
+                            <div class="device-type-text">
+                                <span class="device-emoji">${emoji}</span>
+                                <span class="device-type">${device.device_type}</span>
+                            </div>
+                            <div class="grade-badge ${device.grade.toLowerCase()}">${device.grade}</div>
+                        </div>
+                        <div class="device-body">
+                            <div class="device-ip">${device.ip_address}</div>
+                            <div class="device-manufacturer">${device.manufacturer || 'Unknown'}</div>
+                            <div class="port-pills">${portHtml || '<span style="color: #8B9EC7; font-size: 12px;">No open ports</span>'}</div>
+                            <div class="risk-score-label">
+                                <span>Risk Score</span>
+                                <span>${device.risk_score || 0}</span>
+                            </div>
+                            <div class="risk-score-bar">
+                                <div class="risk-score-fill" style="width: ${(device.risk_score || 0)}%"></div>
+                            </div>
+                            <button class="device-button">View Details →</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
             container.innerHTML = html;
-        }
-
-        function renderDeviceCard(device, isOffline = false) {
-            const emoji = getDeviceEmoji(device.device_type);
-            const ports = device.open_ports || [];
-            const portHtml = ports.slice(0, 8).map(p => {
-                const color = getPortColor(p);
-                return `<div class="port-pill ${color}">${p}</div>`;
-            }).join('');
-
-            const statusBadge = device.is_current 
-                ? `<div class="status-badge current" title="Found in current scan">✓ Found</div>`
-                : `<div class="status-badge offline" title="Not in current scan - may be offline">Offline</div>`;
-
-            const scanCountBadge = device.scan_count ? `<div class="scan-count-badge" title="Scanned ${device.scan_count} time(s)">Seen ${device.scan_count}x</div>` : '';
-
-            return `
-                <div class="device-card grade-${device.grade.toLowerCase()}${isOffline ? ' offline-device' : ''}" onclick="openModal('${device.ip_address}')">
-                    <div class="device-badges">
-                        ${statusBadge}
-                        ${scanCountBadge}
-                    </div>
-                    <div class="device-header">
-                        <div class="device-type-text">
-                            <span class="device-emoji">${emoji}</span>
-                            <span class="device-type">${device.device_type}</span>
-                        </div>
-                        <div class="grade-badge ${device.grade.toLowerCase()}">${device.grade}</div>
-                    </div>
-                    <div class="device-body">
-                        <div class="device-ip">${device.ip_address}</div>
-                        <div class="device-manufacturer">${device.manufacturer || 'Unknown'}</div>
-                        <div class="port-pills">${portHtml || '<span style="color: #8B9EC7; font-size: 12px;">No open ports</span>'}</div>
-                        <div class="risk-score-label">
-                            <span>Risk Score</span>
-                            <span>${device.risk_score || 0}</span>
-                        </div>
-                        <div class="risk-score-bar">
-                            <div class="risk-score-fill" style="width: ${(device.risk_score || 0)}%"></div>
-                        </div>
-                        <button class="device-button">View Details →</button>
-                    </div>
-                </div>
-            `;
         }
 
         function renderReport(devices, summary) {
@@ -1501,13 +1393,9 @@
                 remHtml += '</ul>';
             }
 
-            const statusText = device.is_current ? '🟢 Currently Connected' : '⚫ Previously Connected (Offline)';
-            const statusColor = device.is_current ? '#2ED573' : '#8B9EC7';
-
             const content = `
                 <div class="modal-header">
                     <div class="modal-device-type">${emoji} ${device.device_type}</div>
-                    <div class="modal-status" style="color: ${statusColor}; margin-top: 8px; font-size: 12px; font-weight: bold;">${statusText}</div>
                 </div>
                 <div class="modal-grid">
                     <div class="modal-field"><div class="modal-label">IP Address</div><div class="modal-value ip">${device.ip_address}</div></div>
@@ -1537,10 +1425,6 @@
                     <div class="timestamp-item">
                         <div class="timestamp-label">Last Seen</div>
                         <div class="timestamp-value">${formatDate(device.last_seen)}</div>
-                    </div>
-                    <div class="timestamp-item">
-                        <div class="timestamp-label">Scanned</div>
-                        <div class="timestamp-value">${device.scan_count || 0} time(s)</div>
                     </div>
                 </div>
             `;
