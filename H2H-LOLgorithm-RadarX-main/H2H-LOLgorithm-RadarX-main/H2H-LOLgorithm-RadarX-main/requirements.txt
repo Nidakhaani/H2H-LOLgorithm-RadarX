@@ -1,8 +1,0 @@
-scapy
-python-nmap
-python-dotenv
-fastapi
-uvicorn
-rich
-requests
-python-multipart
