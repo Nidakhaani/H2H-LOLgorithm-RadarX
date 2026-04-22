@@ -132,6 +132,56 @@ def run_demo_pipeline() -> None:
     console.print(f"\n[bold cyan]⏱️ Total pipeline time: {(time.perf_counter() - pipeline_start):.2f}s[/bold cyan]")
 
 
+def run_live_scan() -> None:
+    from discovery.scanner import NetworkScanner
+    from discovery.fingerprinter import DeviceFingerprinter
+    from discovery.scorecard import SecurityScorecard
+    from data.database import DatabaseManager
+
+    console.print("[bold green]📡 Starting FULL LIVE SCAN...[/bold green]\n")
+    pipeline_start = time.perf_counter()
+
+    scanner = NetworkScanner()
+    t0 = time.perf_counter()
+    discovered_devices = scanner.scan()
+    for device in discovered_devices:
+        device["open_ports"] = scanner.scan_ports(device["ip"])
+    t1 = time.perf_counter()
+    console.print(
+        f"📡 Discovering devices...           ✅ Found {len(discovered_devices)} devices  ({(t1 - t0):.1f}s)"
+    )
+
+    fingerprinter = DeviceFingerprinter()
+    t2 = time.perf_counter()
+    fingerprinted_devices = fingerprinter.fingerprint_all(discovered_devices)
+    t3 = time.perf_counter()
+    console.print(
+        f"🏷️  Fingerprinting devices...        ✅ {len(fingerprinted_devices)} devices classified  ({(t3 - t2):.1f}s)"
+    )
+
+    scorecard = SecurityScorecard()
+    t4 = time.perf_counter()
+    graded_devices = scorecard.grade_all(fingerprinted_devices)
+    summary = scorecard.network_summary(graded_devices)
+    t5 = time.perf_counter()
+    console.print(
+        "🛡️  Calculating security grades...   "
+        f"✅ Network Grade: {summary.get('network_grade', 'C')} "
+        f"({summary.get('critical_count', 0)} critical)  ({(t5 - t4):.1f}s)"
+    )
+
+    db_start = time.perf_counter()
+    db = DatabaseManager()
+    db.save_scan_session(graded_devices, time.perf_counter() - pipeline_start, _pipeline_scan_method(graded_devices))
+    db_end = time.perf_counter()
+    console.print(f"💾 Saving to database...            ✅ Saved to {db.db_path}  ({(db_end - db_start):.1f}s)\n")
+    db.close()
+
+    _render_device_table(graded_devices, "RadarX - Live Network Scan Results")
+    _render_network_summary_box(summary)
+    console.print(f"\n[bold cyan]⏱️ Total pipeline time: {(time.perf_counter() - pipeline_start):.2f}s[/bold cyan]")
+
+
 def run_report() -> None:
     from data.database import DatabaseManager
     from discovery.scorecard import SecurityScorecard
@@ -251,7 +301,7 @@ def main():
         if args.demo:
             run_demo_pipeline()
         elif args.scan:
-            console.print("[bold green]📡 Starting FULL LIVE SCAN...[/bold green]")
+            run_live_scan()
         elif args.api:
             console.print("[bold blue]🚀 Starting FastAPI backend on port 8000...[/bold blue]")
             try:

@@ -350,9 +350,8 @@ class NetworkScanner:
             return ip
 
     def scan_ports(self, ip: str) -> dict:
-        """Scan common ports — returns {port_int: service_name} for open ports.
-        Expanded to cover routers, printers, cameras, IoT, and mobile services.
-        """
+        """Scan common ports — returns {port_int: service_name} for open ports."""
+        # Mock port profiles (for demo/fallback IPs)
         mock_profiles = {
             "192.168.1.1":   {22: "SSH", 80: "HTTP", 443: "HTTPS"},
             "192.168.1.101": {5353: "mDNS"},
@@ -363,30 +362,27 @@ class NetworkScanner:
             "192.168.1.106": {80: "HTTP", 631: "IPP", 9100: "Printer-RAW"},
             "192.168.1.107": {23: "Telnet", 80: "HTTP"},
         }
+
         if ip in mock_profiles:
             return mock_profiles[ip]
 
         ports = {
-            21: "FTP", 23: "Telnet", 445: "SMB",
-            22: "SSH", 443: "HTTPS", 8443: "HTTPS-Alt",
-            80: "HTTP", 8080: "HTTP-Alt", 8888: "HTTP-Dev",
-            554: "RTSP", 8554: "RTSP-Alt",
-            631: "IPP", 9100: "Printer-RAW",
-            1883: "MQTT", 8883: "MQTT-TLS",
-            1900: "UPnP", 5353: "mDNS",
-            7000: "AirPlay", 7100: "AirPlay-Alt", 62078: "Apple-iTunes-Sync",
-            2049: "NFS",
+            21: "FTP", 22: "SSH", 23: "Telnet", 443: "HTTPS",
+            80: "HTTP", 8080: "HTTP-Alt", 554: "RTSP", 631: "IPP",
+            1883: "MQTT", 1900: "UPnP", 5353: "mDNS", 445: "SMB",
+            9100: "Printer-RAW", 3389: "RDP", 8008: "Chromecast",
+            161: "SNMP", 515: "LPD", 8883: "MQTT-TLS",
         }
 
         open_ports = {}
 
         def check_port(port_svc):
-            port, svc = port_svc
+            p, svc = port_svc
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     s.settimeout(0.6)
-                    if s.connect_ex((ip, port)) == 0:
-                        return port, svc
+                    if s.connect_ex((ip, p)) == 0:
+                        return p, svc
             except OSError:
                 pass
             return None
@@ -396,156 +392,6 @@ class NetworkScanner:
             for res in results:
                 if res:
                     open_ports[int(res[0])] = res[1]
-
-        return open_ports
-
-        """Tier 0: TCP connect sweep — works on Windows without admin/Npcap.
-        Tries port 80, 443, 22, 445 on every host in the subnet.
-        If any port responds (open or refused), the host is alive."""
-        network = ipaddress.IPv4Network(self.network_range, strict=False)
-        probe_ports = [80, 443, 22, 445, 8080, 8443, 23, 21]
-        live_hosts = set()
-
-        def probe_host(ip_str: str) -> str | None:
-            for port in probe_ports:
-                try:
-                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                        s.settimeout(0.4)
-                        result = s.connect_ex((ip_str, port))
-                        # 0 = open, 111/10061 = connection refused (still alive)
-                        if result in (0, 111, 10061):
-                            return ip_str
-                except (socket.timeout, OSError):
-                    continue
-            return None
-
-        # Skip network/broadcast addresses
-        hosts = [str(h) for h in network.hosts()]
-        # Limit to /24 for speed (max 254 hosts)
-        if len(hosts) > 254:
-            hosts = hosts[:254]
-
-        self.console.print(f"[cyan]Sweeping {len(hosts)} hosts in {self.network_range}...[/cyan]")
-
-        with ThreadPoolExecutor(max_workers=100) as executor:
-            futures = {executor.submit(probe_host, ip): ip for ip in hosts}
-            for future in as_completed(futures):
-                result = future.result()
-                if result:
-                    live_hosts.add(result)
-
-        devices = []
-        for ip in sorted(live_hosts):
-            devices.append(self._create_device_dict(ip, "00:00:00:00:00:00", "Socket Sweep"))
-        return devices
-
-    def _arp_scan(self) -> list[dict]:
-        """Tier 1: scapy ARP"""
-        arp_request = scapy.ARP(pdst=self.network_range)
-        broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
-        arp_request_broadcast = broadcast / arp_request
-        answered_list = scapy.srp(arp_request_broadcast, timeout=3, verbose=False)[0]
-
-        devices = []
-        for element in answered_list:
-            ip = element[1].psrc
-            mac = element[1].hwsrc
-            devices.append(self._create_device_dict(ip, mac, "ARP Scan"))
-        return devices
-
-    def _nmap_scan(self) -> list[dict]:
-        """Tier 2: python-nmap"""
-        nm = nmap.PortScanner()
-        nm.scan(hosts=self.network_range, arguments='-sn')
-        
-        devices = []
-        for host in nm.all_hosts():
-            ip = host
-            mac = nm[host]['addresses'].get('mac', '00:00:00:00:00:00')
-            devices.append(self._create_device_dict(ip, mac, "Nmap Scan"))
-        return devices
-
-    def _mock_scan(self) -> list[dict]:
-        """Tier 3: always returns 8 mock devices"""
-        mock_devices = [
-            ("192.168.1.1", "C0:FF:EE:00:01:01", "Router"),
-            ("192.168.1.101", "A4:C3:F0:00:01:02", "iPhone"),
-            ("192.168.1.102", "8C:79:F5:00:01:03", "Smart-TV"),
-            ("192.168.1.103", "BC:AD:28:00:01:04", "IP-Camera"),
-            ("192.168.1.104", "F8:CA:B8:00:01:05", "Dell-Laptop"),
-            ("192.168.1.105", "50:C7:BF:00:01:06", "Smart-Bulb"),
-            ("192.168.1.106", "3C:D9:2B:00:01:07", "HP-Printer"),
-            ("192.168.1.107", "00:11:22:00:01:08", "Unknown-IoT")
-        ]
-        
-        devices = []
-        for ip, mac, hostname in mock_devices:
-            devices.append(self._create_device_dict(ip, mac, "Mock Scan", hostname))
-        return devices
-
-    def _create_device_dict(self, ip: str, mac: str, method: str, hostname: str = None) -> dict:
-        return {
-            "ip": ip,
-            "mac": mac,
-            "hostname": hostname or self.get_hostname(ip),
-            "manufacturer": self.lookup_manufacturer(mac),
-            "scan_method": method,
-            "timestamp": datetime.datetime.now().isoformat()
-        }
-
-    def lookup_manufacturer(self, mac: str) -> str:
-        prefix = mac.replace(":", "").upper()[:6]
-        return self.oui_database.get(prefix, "Unknown")
-
-    def get_hostname(self, ip: str) -> str:
-        try:
-            return socket.gethostbyaddr(ip)[0]
-        except socket.herror:
-            return "Unknown"
-
-    def scan_ports(self, ip: str) -> dict:
-        """Returns {port_number: service_name} for OPEN ports only.
-        Keys are always integers."""
-        # Mock port profiles (for demo/fallback IPs)
-        mock_profiles = {
-            "192.168.1.1": {22: "SSH", 80: "HTTP", 443: "HTTPS"},
-            "192.168.1.101": {5353: "mDNS"},
-            "192.168.1.102": {1900: "UPnP", 8080: "HTTP-Alt"},
-            "192.168.1.103": {23: "Telnet", 80: "HTTP", 554: "RTSP"},
-            "192.168.1.104": {22: "SSH", 443: "HTTPS", 5353: "mDNS"},
-            "192.168.1.105": {1883: "MQTT", 1900: "UPnP"},
-            "192.168.1.106": {80: "HTTP", 631: "IPP", 9100: "Printer-RAW"},
-            "192.168.1.107": {23: "Telnet", 80: "HTTP"}
-        }
-
-        if ip in mock_profiles:
-            return mock_profiles[ip]
-
-        # Real port scan — always use integer keys
-        ports = {
-            21: "FTP", 22: "SSH", 23: "Telnet", 80: "HTTP",
-            443: "HTTPS", 445: "SMB", 554: "RTSP", 631: "IPP",
-            1883: "MQTT", 1900: "UPnP", 5353: "mDNS", 8080: "HTTP-Alt",
-            9100: "Printer-RAW"
-        }
-
-        open_ports = {}
-
-        def check_port(port):
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.settimeout(0.5)
-                    if s.connect_ex((ip, port)) == 0:
-                        return port, ports[port]
-            except OSError:
-                pass
-            return None
-
-        with ThreadPoolExecutor(max_workers=30) as executor:
-            results = executor.map(check_port, ports.keys())
-            for res in results:
-                if res:
-                    open_ports[int(res[0])] = res[1]  # always int keys
 
         return open_ports
 
