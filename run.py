@@ -245,7 +245,8 @@ def run_report() -> None:
     critical = []
     normal = []
     for item in remediation_items:
-        if item.startswith("URGENT:"):
+        # Recognize new dynamic prefixes as urgent
+        if any(marker in item for marker in ["Critical", "URGENT", "Telnet (23)", "RDP (3389)", "SMB (445)"]):
             critical.append(item)
         else:
             normal.append(item)
@@ -260,7 +261,8 @@ def run_report() -> None:
     if ordered:
         console.print("\n[bold]Full Remediation Checklist[/bold]")
         for idx, item in enumerate(ordered, start=1):
-            if item.startswith("URGENT:"):
+            # Same check for colored output
+            if any(marker in item for marker in ["Critical", "URGENT", "Telnet (23)", "RDP (3389)", "SMB (445)"]):
                 console.print(f"{idx}. [bold red]{item}[/bold red]")
             else:
                 console.print(f"{idx}. {item}")

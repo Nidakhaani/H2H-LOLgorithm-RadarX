@@ -9,27 +9,17 @@ from collections import Counter
 class SecurityScorecard:
     """Class to compute security scores for discovered devices."""
 
-    REMEDIATION_MAP = {
-        "telnet_open": "URGENT: Log into device admin panel → Disable Telnet → Enable SSH instead",
-        "ftp_open": "Disable FTP service. Use SFTP (port 22) for any file transfer needs",
-        "default_creds": "URGENT: Change the default admin password immediately. Use 12+ characters",
-        "http_no_https": "Enable HTTPS in device admin settings. If unavailable, isolate to an IoT VLAN",
-        "rtsp_camera": "Enable RTSP over TLS in camera settings, or restrict access to trusted IPs only",
-        "upnp_enabled": "Disable UPnP in device settings to stop it from auto-opening firewall ports",
-        "unknown_device": "Identify this device — if unrecognized, isolate it from the main network immediately",
-        "mqtt_open": "Enable TLS on MQTT broker, or restrict port 1883 to localhost only",
-    }
-
-    THREAT_KEYWORDS = {
-        "Telnet port 23 is open": "telnet_open",
-        "FTP port 21 is open": "ftp_open",
-        "Unknown device with Telnet": "default_creds",
-        "Web interface is HTTP-only": "http_no_https",
-        "Camera RTSP stream is unencrypted": "rtsp_camera",
-        "UPnP is enabled": "upnp_enabled",
-        "Manufacturer is unidentified": "unknown_device",
-        "MQTT is running without TLS": "mqtt_open",
-        "SMB port 445 is open": "smb_open",
+    # Thresholds for threat classification
+    THREAT_MARKERS = {
+        "Telnet": "telnet_open",
+        "FTP": "ftp_open",
+        "HTTP": "http_no_https",
+        "RTSP": "rtsp_camera",
+        "UPnP": "upnp_enabled",
+        "Manufacturer": "unknown_device",
+        "MQTT": "mqtt_open",
+        "SMB": "smb_open",
+        "RDP": "rdp_open",
     }
 
     def grade_device(self, device: dict) -> dict:
@@ -38,7 +28,7 @@ class SecurityScorecard:
         score, findings = self._calculate_risk_score(scored_device)
         grade = self._score_to_grade(score)
         label = self._score_to_label(score)
-        remediation = self._generate_remediation(scored_device, findings)
+        remediation = self._generate_remediation(scored_device, score, findings)
 
         scored_device["risk_score"] = score
         scored_device["score"] = score
@@ -93,6 +83,14 @@ class SecurityScorecard:
                     "msg": "Web interface is HTTP-only — all traffic including passwords is unencrypted",
                 }
             )
+        if 3389 in ports:
+            score += 25
+            findings.append(
+                {
+                    "level": "HIGH",
+                    "msg": "RDP port 3389 is open — potential remote desktop hijacking risk",
+                }
+            )
 
         # MEDIUM penalties
         if 554 in ports:
@@ -125,6 +123,14 @@ class SecurityScorecard:
                 {
                     "level": "MEDIUM",
                     "msg": "SMB port 445 is open — potential file share exposure",
+                }
+            )
+        if 22 in ports:
+            score += 5
+            findings.append(
+                {
+                    "level": "MEDIUM",
+                    "msg": "SSH port 22 is open — ensure strong keys are used",
                 }
             )
         if mfr in ["unknown", ""]:
@@ -163,42 +169,52 @@ class SecurityScorecard:
             return "HIGH RISK"
         return "CRITICAL"
 
-    def _generate_remediation(self, device: dict, findings: list) -> list[str]:
-        del device
-        ordered_levels = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "INFO": 3}
-        sorted_findings = sorted(findings, key=lambda finding: ordered_levels.get(finding.get("level"), 99))
-
+    def _generate_remediation(self, device: dict, score: int, findings: list) -> list[str]:
         actions = []
-        for finding in sorted_findings:
-            message = finding.get("msg", "")
+        ports = device.get("open_ports", {})
+        status = device.get("status", "").upper() or device.get("device_status", "").upper()
+        # Fallback to manufacturer if status not explicitly set
+        if not status and device.get("manufacturer", "").lower() in ["unknown", ""]:
+            status = "UNKNOWN"
 
-            if "Telnet port 23 is open" in message:
-                actions.append(self.REMEDIATION_MAP["telnet_open"])
-            if "FTP port 21 is open" in message:
-                actions.append(self.REMEDIATION_MAP["ftp_open"])
-            if "Unknown device with Telnet" in message:
-                actions.append(self.REMEDIATION_MAP["default_creds"])
-            if "Web interface is HTTP-only" in message:
-                actions.append(self.REMEDIATION_MAP["http_no_https"])
-            if "Camera RTSP stream is unencrypted" in message:
-                actions.append(self.REMEDIATION_MAP["rtsp_camera"])
-            if "UPnP is enabled" in message:
-                actions.append(self.REMEDIATION_MAP["upnp_enabled"])
-            if "Manufacturer is unidentified" in message:
-                actions.append(self.REMEDIATION_MAP["unknown_device"])
-            if "MQTT is running without TLS" in message:
-                actions.append(self.REMEDIATION_MAP["mqtt_open"])
+        # Port-specific remediations
+        if 445 in ports:
+            actions.append("SMB (445): Patch EternalBlue vulnerabilities or disable if service is unused")
+        if 3389 in ports:
+            actions.append("RDP (3389): Restrict RDP access to VPN only and enforce MFA")
+        if 22 in ports:
+            actions.append("SSH (22): Disable password authentication and use SSH keys for login")
+        if 23 in ports:
+            actions.append("Telnet (23): Disable Telnet service immediately; it is highly insecure")
+        if 21 in ports:
+            actions.append("FTP (21): Replace FTP with SFTP or HTTPS for secure file transfers")
+        if 80 in ports or 8080 in ports:
+            actions.append("HTTP (80/8080): Enforce HTTPS/TLS to encrypt web administration traffic")
 
-        if not actions:
-            return ["No immediate action required. Continue routine monitoring and firmware updates."]
+        # Risk score logic
+        if score >= 75:
+            actions.append("Critical Risk: Isolate this device from the network and perform a deep forensic scan")
+        elif score >= 40:
+            actions.append("Moderate Risk: Apply latest security patches and conduct a configuration audit")
+        else:
+            actions.append("Low Risk: Continue routine monitoring and automated security audits")
 
-        deduped_actions = []
-        seen = set()
-        for action in actions:
-            if action not in seen:
-                deduped_actions.append(action)
-                seen.add(action)
-        return deduped_actions
+        # Device status logic
+        if status == "UNKNOWN":
+            actions.append("Identity Check: Perform manual identity verification to confirm device ownership")
+
+        # No critical issues fallback
+        if not any(p in ports for p in [21, 23, 445, 3389]) and score < 40:
+            if not actions or all("Low Risk" in a for a in actions):
+                return ["No critical issues detected — continue routine monitoring"]
+
+        # De-duplicate while preserving order
+        deduped = []
+        for a in actions:
+            if a not in deduped:
+                deduped.append(a)
+        
+        return deduped if deduped else ["No critical issues detected — continue routine monitoring"]
 
     def network_summary(self, devices: list[dict]) -> dict:
         grade_distribution = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0}
@@ -219,7 +235,7 @@ class SecurityScorecard:
 
             for finding in device.get("risk_findings", []):
                 message = finding.get("msg", "")
-                for marker, threat_key in self.THREAT_KEYWORDS.items():
+                for marker, threat_key in self.THREAT_MARKERS.items():
                     if marker in message:
                         threat_counter[threat_key] += 1
                         break
