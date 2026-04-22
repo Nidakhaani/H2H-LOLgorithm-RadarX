@@ -117,7 +117,7 @@ Detailed breakdowns of every device's vulnerabilities, including specific port r
 
 ## 🌐 Live Deployment
 
-**Live Demo:** [https://radarx-iot-agent.onrender.com/](https://radarx-iot-agent.onrender.com/)
+**Live Demo:** [https://radarx.up.railway.app/](https://radarx.up.railway.app/)
 
 *(Note: The live version runs in Demo Mode due to cloud networking restrictions.)*
 
@@ -128,6 +128,7 @@ Detailed breakdowns of every device's vulnerabilities, including specific port r
 | Member | Role | GitHub |
 | :--- | :--- | :--- |
 | **Nida Khaani** | Project Lead & Full-Stack Developer | [@Nidakhaani](https://github.com/Nidakhaani) |
+| **Syed Shahid** | Frontend Developer | [@danishottasf](https://github.com/danishottasf) |
 
 **Built for:** T John Institute of Technology Hack2Hire 1.0 (April 2026)
 
