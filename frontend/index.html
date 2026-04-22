@@ -93,6 +93,7 @@
             font-family: 'Outfit', sans-serif;
             text-transform: uppercase;
             letter-spacing: 1px;
+            position: relative;
         }
 
         .scan-button:hover:not(:disabled) {
@@ -103,6 +104,16 @@
         .scan-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .scan-button.glow-animation {
+            animation: pulseButton 800ms ease-in-out;
+        }
+
+        @keyframes pulseButton {
+            0% { box-shadow: 0 0 0px var(--primary); }
+            50% { box-shadow: 0 0 30px var(--primary), 0 0 60px var(--primary); }
+            100% { box-shadow: 0 0 0px var(--primary); }
         }
 
         .status-dot {
@@ -123,7 +134,7 @@
         }
 
         /* ─────────────────────────────────────────────── */
-        /* STATS ROW & HEALTH SCORE (Feature 3) */
+        /* STATS ROW & HEALTH SCORE */
         /* ─────────────────────────────────────────────── */
         .stats-row {
             display: grid;
@@ -187,39 +198,98 @@
         .stat-card.secure .stat-value { color: var(--grade-a); }
 
         /* ─────────────────────────────────────────────── */
-        /* RADAR VISUALIZATION */
+        /* CINEMATIC RADAR (Feature Redesign) */
         /* ─────────────────────────────────────────────── */
         .radar-section {
             background: radial-gradient(circle at center, #0F1620 0%, #080C10 100%);
-            padding: 40px; display: flex; justify-content: center; align-items: center;
-            position: relative; border-bottom: 2px solid var(--border); min-height: 480px;
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-bottom: 2px solid var(--border);
+            min-height: 480px;
+            opacity: 0;
+            overflow: hidden;
         }
 
-        .radar-container { position: relative; width: 400px; height: 400px; }
-        canvas#radarCanvas { position: absolute; top: 0; left: 0; z-index: 1; }
-        .radar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
-        .radar-dot {
-            position: absolute; width: 10px; height: 10px; border-radius: 50%; transform: translate(-50%, -50%);
-            cursor: pointer; z-index: 5; transition: transform 0.2s ease; box-shadow: 0 0 10px currentColor;
+        .radar-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            transition: all 1200ms cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .radar-dot:hover { transform: translate(-50%, -50%) scale(1.5); z-index: 10; }
-        .radar-dot.critical { animation: pulse-red 2s infinite; }
+
+        canvas#radarCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .radar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .radar-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            cursor: pointer;
+            z-index: 5;
+            box-shadow: 0 0 10px currentColor;
+            opacity: 0;
+        }
+
+        .radar-dot.show {
+            animation: bounceIn 600ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            70% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .radar-dot.critical {
+            animation: bounceIn 600ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulse-red 2s infinite 600ms;
+        }
+
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-        .radar-no-data {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: var(--text-dim); text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; z-index: 0;
+        .radar-dot.ghost-signal {
+            opacity: 0.2 !important;
+            box-shadow: none !important;
+            filter: grayscale(1);
         }
+
         .radar-tooltip {
-            position: fixed; background: #0D1117; border: 1px solid var(--primary); padding: 8px 12px;
-            border-radius: 4px; font-size: 12px; pointer-events: none; display: none; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            position: fixed;
+            background: #0D1117;
+            border: 1px solid var(--primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         /* ─────────────────────────────────────────────── */
-        /* NEW DEVICE LAYOUT (REDESIGN) */
+        /* DEVICE LAYOUT */
         /* ─────────────────────────────────────────────── */
         .tabs { display: flex; border-bottom: 2px solid var(--border); padding: 0 30px; background: #0A0E14; }
         .tab-button {
@@ -231,6 +301,16 @@
         
         .tab-content { display: none; padding: 30px; }
         .tab-content.active { display: block; }
+
+        .devices-container-wrapper {
+            transition: opacity 600ms ease, transform 600ms ease;
+        }
+
+        .devices-container-wrapper.hidden {
+            opacity: 0;
+            transform: translateY(40px);
+            pointer-events: none;
+        }
 
         .device-section-block { margin-bottom: 50px; }
         .section-header-wrap { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
@@ -255,26 +335,23 @@
         /* Card Styles */
         .device-card {
             background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px;
-            overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden; opacity: 1; transform: translateY(0);
             border-left: 6px solid var(--border); cursor: pointer; position: relative;
         }
         
-        /* Active Card Style */
-        .device-card.active-card:hover {
+        .active-card:hover {
             border-color: var(--primary); transform: translateY(-5px);
             box-shadow: 0 10px 40px -10px rgba(0, 180, 216, 0.3), 0 0 20px -5px var(--grade-color);
         }
 
-        /* Stale Card Style */
-        .device-card.stale-card { filter: opacity(0.6) grayscale(0.4); border-left-width: 4px; }
-        .device-card.stale-card:hover { filter: opacity(0.8) grayscale(0.2); }
+        .stale-card { filter: opacity(0.6) grayscale(0.4); border-left-width: 4px; }
+        .stale-card:hover { filter: opacity(0.8) grayscale(0.2); }
 
         .card-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: flex-start; background: rgba(255,255,255,0.02); }
         .card-type-wrap { display: flex; flex-direction: column; }
         .card-type-label { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .card-manufacturer { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
 
-        .grade-badge-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .grade-badge {
             width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
             font-weight: 800; font-size: 16px; color: #080C10; position: relative;
@@ -287,8 +364,6 @@
         .status-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; margin-bottom: 15px; text-transform: uppercase; }
         .status-tag.active { background: rgba(34, 197, 94, 0.1); color: var(--grade-a); }
         .status-tag.stale { background: rgba(139, 158, 199, 0.1); color: var(--text-dim); }
-
-        .stale-since-badge { background: #333; color: #888; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px; margin-left: 8px; vertical-align: middle;}
 
         .risk-bar-wrap { margin-bottom: 20px; }
         .risk-bar-label { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; margin-bottom: 6px; color: var(--text-dim); }
@@ -308,9 +383,8 @@
             width: 100%; background: none; border: 1px solid var(--border); color: var(--text-dim);
             padding: 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
         }
-        .active-card .view-btn:hover { background: var(--primary); border-color: var(--primary); color: #080C10; }
 
-        /* Existing Modal & Investigation Panel */
+        /* Modal & Progress */
         .investigate-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6);
             z-index: 200; opacity: 0; visibility: hidden; transition: all 0.3s ease; backdrop-filter: blur(4px);
@@ -322,10 +396,7 @@
             padding: 0; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
         .investigate-panel.active { transform: translateX(-360px); }
-        .panel-header { padding: 25px; background: #0A0E14; border-bottom: 1px solid var(--border); position: relative; }
-        .panel-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-dim); font-size: 20px; cursor: pointer; }
-        .panel-content { flex: 1; overflow-y: auto; padding: 25px; }
-
+        
         .progress-section { background: #0D1117; padding: 12px 30px; border-bottom: 1px solid var(--border); display: none; }
         .progress-section.active { display: block; }
         .progress-bar-container { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
@@ -375,10 +446,10 @@
         <div class="stat-card secure"><div class="stat-value" id="secureCount">--</div><div class="stat-label">Stable (A-B)</div></div>
     </div>
 
-    <div class="radar-section">
-        <div class="radar-no-data" id="radarNoData">SYSTEM STANDBY<br><small>Awaiting scan data telemetry</small></div>
+    <!-- Cinematic Radar Section -->
+    <div class="radar-section" id="radarSection">
         <div class="radar-container" id="radarContainer">
-            <canvas id="radarCanvas" width="400" height="400"></canvas>
+            <canvas id="radarCanvas" width="320" height="320"></canvas>
             <div class="radar-overlay" id="radarDots"></div>
         </div>
     </div>
@@ -389,7 +460,9 @@
     </div>
 
     <div class="tab-content active" id="devicesTab">
-        <div id="devicesContainer"></div>
+        <div id="devicesContainerWrapper" class="devices-container-wrapper">
+            <div id="devicesContainer"></div>
+        </div>
     </div>
 
     <div class="tab-content" id="reportTab">
@@ -405,44 +478,76 @@
 
     <div class="radar-tooltip" id="radarTooltip"></div>
 
-    <footer>RADARX QUANTUM INTELLIGENCE TERMINAL | T JOHN INSTITUTE OF TECHNOLOGY | HACK2HIRE 1.0</footer>
+    <footer>RADARX QUANTUM INTELLIGENCE TERMINAL | T JOHN INSTITUTE OF TECHNOLOGY</footer>
 
     <script>
         let devices = [];
         let summary = {};
         let scanActive = false;
         let sweepAngle = 0;
+        let foundIps = new Set();
 
         const canvas = document.getElementById('radarCanvas');
         const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
+        const width = 320;
+        const height = 320;
 
         function animateRadar() {
             ctx.clearRect(0, 0, width, height);
             ctx.strokeStyle = 'rgba(0, 180, 216, 0.15)'; ctx.lineWidth = 1;
-            for(let r = 50; r <= 200; r += 50) { ctx.beginPath(); ctx.arc(width/2, height/2, r, 0, Math.PI * 2); ctx.stroke(); }
-            ctx.beginPath(); ctx.moveTo(width/2, 20); ctx.lineTo(width/2, height-20); ctx.moveTo(20, height/2); ctx.lineTo(width-20, height/2); ctx.stroke();
+            for(let r = 40; r <= 160; r += 40) { ctx.beginPath(); ctx.arc(width/2, height/2, r, 0, Math.PI * 2); ctx.stroke(); }
+            ctx.beginPath(); ctx.moveTo(width/2, 10); ctx.lineTo(width/2, height-10); ctx.moveTo(10, height/2); ctx.lineTo(width-10, height/2); ctx.stroke();
 
-            const sweepSpeed = scanActive ? 0.08 : 0.03;
+            const sweepSpeed = scanActive ? 0.07 : 0.026;
             sweepAngle += sweepSpeed;
             if (sweepAngle > Math.PI * 2) sweepAngle = 0;
+
+            // Randomized Sector Interference (Realistic Noise)
+            if (scanActive && Math.random() > 0.95) {
+                createInterferenceBlip();
+            }
+
             ctx.save(); ctx.translate(width/2, height/2); ctx.rotate(sweepAngle);
             for(let i = 0; i < 60; i++) {
-                ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0, 0, 200, -0.05 - (i * 0.01), 0 - (i * 0.01));
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0, 0, 160, -0.05 - (i * 0.01), 0 - (i * 0.01));
                 ctx.fillStyle = `rgba(0, 180, 216, ${0.3 * (1 - i/60)})`; ctx.fill();
             }
-            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0, -200); ctx.strokeStyle = 'rgba(0, 180, 216, 0.8)'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0, -160); ctx.strokeStyle = 'rgba(0, 180, 216, 0.8)'; ctx.lineWidth = 2; ctx.stroke();
             ctx.restore();
             requestAnimationFrame(animateRadar);
         }
 
-        async function loadData() {
+        function createInterferenceBlip() {
+            const container = document.getElementById('radarDots');
+            const blip = document.createElement('div');
+            const angle = Math.random() * Math.PI * 2;
+            const radius = Math.random() * 150;
+            const x = 160 + radius * Math.cos(angle);
+            const y = 160 + radius * Math.sin(angle);
+            
+            blip.style.position = 'absolute';
+            blip.style.width = '4px';
+            blip.style.height = '4px';
+            blip.style.background = 'rgba(245, 158, 11, 0.5)';
+            blip.style.borderRadius = '50%';
+            blip.style.left = x + 'px';
+            blip.style.top = y + 'px';
+            blip.style.boxShadow = '0 0 5px orange';
+            blip.style.zIndex = '4';
+            container.appendChild(blip);
+            
+            setTimeout(() => blip.remove(), 600);
+        }
+
+        async function loadData(silent = false) {
             try {
                 const [devicesRes, summaryRes] = await Promise.all([fetch('/api/devices'), fetch('/api/summary')]);
                 devices = await devicesRes.json();
                 summary = await summaryRes.json();
-                updateStats(); updateHealthScore(); renderRadarDots(); renderDeviceGrid(); renderReport();
+                
+                if (!silent) {
+                    updateStats(); updateHealthScore(); renderDeviceGrid(); renderReport();
+                }
             } catch (err) { console.error("Telemetry failure:", err); }
         }
 
@@ -472,39 +577,65 @@
         function getRadarPos(ip) {
             let hash = 0; for (let i = 0; i < ip.length; i++) { hash = ((hash << 5) - hash) + ip.charCodeAt(i); hash |= 0; }
             const angle = (Math.abs(hash) % 360) * (Math.PI / 180);
-            const radius = 50 + (Math.abs(hash * 13) % 140);
-            return { x: 200 + radius * Math.cos(angle - Math.PI/2), y: 200 + radius * Math.sin(angle - Math.PI/2) };
+            const radius = 30 + (Math.abs(hash * 13) % 120);
+            return { x: 160 + radius * Math.cos(angle - Math.PI/2), y: 160 + radius * Math.sin(angle - Math.PI/2) };
         }
 
-        function renderRadarDots() {
+        function addRadarDot(device, isGhost = false) {
+            const existingDot = document.getElementById(`dot-${device.ip_address.replace(/\./g, '-')}`);
+            if (existingDot) {
+                // If resolving a ghost dot to active
+                if (!isGhost && existingDot.classList.contains('ghost-signal')) {
+                    resolveGhostDot(existingDot, device);
+                }
+                return;
+            }
+
             const container = document.getElementById('radarDots');
-            const placeholder = document.getElementById('radarNoData');
-            container.innerHTML = "";
-            if (devices.length === 0) { placeholder.style.display = "block"; return; }
-            placeholder.style.display = "none";
-            const colorMap = { 'A': 'var(--grade-a)', 'B': 'var(--grade-b)', 'C': 'var(--grade-c)', 'D': 'var(--grade-d)', 'F': 'var(--grade-f)' };
-            devices.forEach(device => {
-                const pos = getRadarPos(device.ip_address);
-                const dot = document.createElement('div');
-                dot.className = `radar-dot ${['D', 'F'].includes(device.grade) ? 'critical' : ''}`;
-                dot.style.color = colorMap[device.grade];
-                dot.style.backgroundColor = colorMap[device.grade];
-                dot.style.left = pos.x + 'px'; dot.style.top = pos.y + 'px';
-                dot.onmouseover = (e) => {
-                    const tt = document.getElementById('radarTooltip');
-                    tt.innerHTML = `<strong>${device.ip_address}</strong><br>${device.grade} | ${device.device_type}`;
-                    tt.style.display = "block"; tt.style.left = (e.clientX + 15) + "px"; tt.style.top = (e.clientY + 15) + "px";
-                };
-                dot.onmouseout = () => document.getElementById('radarTooltip').style.display = "none";
-                dot.onclick = () => investigateDevice(device.ip_address);
-                container.appendChild(dot);
-            });
+            const pos = getRadarPos(device.ip_address);
+            const dot = document.createElement('div');
+            dot.id = `dot-${device.ip_address.replace(/\./g, '-')}`;
+            
+            if (isGhost) {
+                dot.className = `radar-dot ghost-signal show`;
+                dot.style.color = '#334155';
+                dot.style.backgroundColor = '#334155';
+            } else {
+                let color = "#22C55E";
+                if (device.risk_score > 60) color = "#EF4444";
+                else if (device.risk_score > 30) color = "#F59E0B";
+                
+                dot.className = `radar-dot ${device.risk_score > 60 ? 'critical' : ''} show`;
+                dot.style.color = color;
+                dot.style.backgroundColor = color;
+            }
+            
+            dot.style.left = pos.x + 'px'; dot.style.top = pos.y + 'px';
+            dot.onmouseover = (e) => {
+                const tt = document.getElementById('radarTooltip');
+                tt.innerHTML = `<strong>${device.ip_address}</strong><br>${isGhost ? 'Pending Verification...' : device.grade + ' | ' + device.device_type}`;
+                tt.style.display = "block"; tt.style.left = (e.clientX + 15) + "px"; tt.style.top = (e.clientY + 15) + "px";
+            };
+            dot.onmouseout = () => document.getElementById('radarTooltip').style.display = "none";
+            
+            container.appendChild(dot);
         }
 
-        /* ─────────────────────────────────────────────── */
-        /* REDESIGNED DEVICE GRID LOGIC */
-        /* ─────────────────────────────────────────────── */
-        function renderDeviceGrid() {
+        function resolveGhostDot(dot, device) {
+            let color = "#22C55E";
+            if (device.risk_score > 60) color = "#EF4444";
+            else if (device.risk_score > 30) color = "#F59E0B";
+            
+            dot.classList.remove('ghost-signal');
+            if (device.risk_score > 60) dot.classList.add('critical');
+            dot.style.color = color;
+            dot.style.backgroundColor = color;
+            dot.style.transition = 'all 0.5s ease';
+            dot.style.transform = 'translate(-50%, -50%) scale(1.5)';
+            setTimeout(() => dot.style.transform = 'translate(-50%, -50%) scale(1)', 500);
+        }
+
+        function renderDeviceGrid(animate = false) {
             const container = document.getElementById('devicesContainer');
             container.innerHTML = "";
             
@@ -514,68 +645,31 @@
             }
 
             const now = new Date();
-            const activeList = [];
-            const staleList = [];
+            const activeList = devices.filter(d => d.is_current && (Math.floor((now - new Date(d.last_seen)) / 3600000) < 24));
+            const staleList = devices.filter(d => !activeList.includes(d));
 
-            devices.forEach(d => {
-                const lastSeen = new Date(d.last_seen);
-                const hoursAgo = Math.floor((now - lastSeen) / (1000 * 60 * 60));
-                
-                // Logic: Active if in current scan AND seen within last 24h
-                if (d.is_current && hoursAgo < 24) { activeList.push(d); }
-                else { staleList.push(d); }
-            });
-
-            // Sorting by risk_score desc
             activeList.sort((a,b) => b.risk_score - a.risk_score);
             staleList.sort((a,b) => b.risk_score - a.risk_score);
 
             let html = "";
-
-            // Section 1: Active
             if (activeList.length > 0) {
-                html += `
-                    <div class="device-section-block">
-                        <div class="section-header-wrap">
-                            <div class="section-header"><div class="pulse-dot-green"></div> Active Devices</div>
-                            <div class="section-subtext">${activeList.length} devices currently live</div>
-                        </div>
-                        <div class="device-grid">
-                            ${activeList.map(d => renderDeviceCard(d, true)).join('')}
-                        </div>
-                    </div>
-                `;
+                html += `<div class="device-section-block"><div class="section-header-wrap"><div class="section-header"><div class="pulse-dot-green"></div> Active Devices</div><div class="section-subtext">${activeList.length} live</div></div><div class="device-grid">`;
+                activeList.forEach((d, idx) => { html += renderDeviceCard(d, true, animate ? idx : -1); });
+                html += `</div></div>`;
             }
-
-            // Section 2: Stale
             if (staleList.length > 0) {
-                if (activeList.length > 0) { html += `<div class="section-divider">— previously connected —</div>`; }
-                
-                const nowVal = new Date();
-                html += `
-                    <div class="device-section-block">
-                        <div class="section-header-wrap">
-                            <div class="section-header" style="color:var(--text-dim);"><div class="hollow-dot"></div> Stale Devices</div>
-                            <div class="section-subtext">${staleList.length} devices — last seen >24h ago</div>
-                        </div>
-                        <div class="device-grid">
-                            ${staleList.map(d => renderDeviceCard(d, false)).join('')}
-                        </div>
-                    </div>
-                `;
+                if (activeList.length > 0) html += `<div class="section-divider">— previously connected —</div>`;
+                html += `<div class="device-section-block"><div class="section-header-wrap"><div class="section-header" style="color:var(--text-dim);"><div class="hollow-dot"></div> Stale Devices</div><div class="section-subtext">${staleList.length} devices</div></div><div class="device-grid">`;
+                staleList.forEach((d, idx) => { html += renderDeviceCard(d, false, animate ? (activeList.length + idx) : -1); });
+                html += `</div></div>`;
             }
-
             container.innerHTML = html;
         }
 
-        function renderDeviceCard(d, isActive) {
+        function renderDeviceCard(d, isActive, aniIndex = -1) {
             const emoji = getDeviceEmoji(d.device_type);
             const colorMap = { 'A': 'var(--grade-a)', 'B': 'var(--grade-b)', 'C': 'var(--grade-c)', 'D': 'var(--grade-d)', 'F': 'var(--grade-f)' };
             const gradeColor = colorMap[d.grade];
-            
-            const hoursAgo = Math.floor((new Date() - new Date(d.last_seen)) / (1000 * 60 * 60));
-            const lastSeenText = hoursAgo === 0 ? "just now" : `${hoursAgo}h ago`;
-            
             const portHtml = (d.open_ports || []).map(p => {
                 let cls = "";
                 if ([21, 23, 445].includes(p)) cls = "danger";
@@ -584,34 +678,168 @@
                 return `<div class="port-pill ${cls}">${p}</div>`;
             }).join('');
 
+            const aniStyle = aniIndex >= 0 ? `style="opacity: 0; transform: translateY(40px); transition: all 400ms ease-out ${aniIndex * 100}ms;"` : '';
+
             return `
-                <div class="device-card ${isActive ? 'active-card' : 'stale-card'}" 
+                <div class="device-card ${isActive ? 'active-card' : 'stale-card'} card-item-ani" 
+                     ${aniStyle}
                      style="--grade-color: ${gradeColor}; border-left-color: ${gradeColor};"
                      onclick="investigateDevice('${d.ip_address}')">
                     <div class="card-header">
-                        <div class="card-type-wrap">
-                            <div class="card-type-label"><span>${emoji}</span> ${d.device_type}</div>
-                            <div class="card-manufacturer">${d.manufacturer || 'Unknown'}</div>
-                        </div>
-                        <div class="grade-badge-wrap">
-                            <div class="grade-badge" style="background-color: ${gradeColor}">${d.grade}</div>
-                        </div>
+                        <div class="card-type-wrap"><div class="card-type-label"><span>${emoji}</span> ${d.device_type}</div><div class="card-manufacturer">${d.manufacturer}</div></div>
+                        <div class="grade-badge" style="background: ${gradeColor}">${d.grade}</div>
                     </div>
                     <div class="card-body">
                         <div class="card-ip">${d.ip_address}</div>
-                        <div class="status-tag ${isActive ? 'active' : 'stale'}">
-                            ${isActive ? '● ACTIVE' : '○ STALE'}
-                            ${!isActive ? `<span class="stale-since-badge">Seen ${lastSeenText}</span>` : ''}
-                        </div>
-                        <div class="risk-bar-wrap">
-                            <div class="risk-bar-label"><span>Risk Score</span><span>${d.risk_score}</span></div>
-                            <div class="risk-bar-bg"><div class="risk-bar-fill" style="width: ${d.risk_score}%; background: ${gradeColor};"></div></div>
-                        </div>
-                        <div class="port-pills">${portHtml || '<span style="font-size:10px; color:var(--text-dim);">No listeners detected</span>'}</div>
+                        <div class="status-tag ${isActive ? 'active' : 'stale'}">${isActive ? '● ACTIVE' : '○ STALE'}</div>
+                        <div class="risk-bar-wrap"><div class="risk-bar-label"><span>Risk Score</span><span>${d.risk_score}</span></div><div class="risk-bar-bg"><div class="risk-bar-fill" style="width: ${d.risk_score}%; background: ${gradeColor};"></div></div></div>
+                        <div class="port-pills">${portHtml}</div>
                         <button class="view-btn">View Details →</button>
                     </div>
                 </div>
             `;
+        }
+
+        /**
+         * PHASE 4: EXIT ANIMATION
+         */
+        function exitRadarAnimation() {
+            const radarSection = document.getElementById('radarSection');
+            const radarContainer = document.getElementById('radarContainer');
+            const scanBtn = document.getElementById('scanBtn');
+
+            // 1. Get positions
+            const radarRect = radarContainer.getBoundingClientRect();
+            const btnRect = scanBtn.getBoundingClientRect();
+
+            // 2. Set to fixed
+            radarContainer.style.position = 'fixed';
+            radarContainer.style.top = radarRect.top + 'px';
+            radarContainer.style.left = radarRect.left + 'px';
+            radarContainer.style.width = radarRect.width + 'px';
+            radarContainer.style.height = radarRect.height + 'px';
+            radarContainer.style.margin = '0';
+            radarContainer.style.zIndex = '1000';
+
+            // 3. Trigger transition
+            requestAnimationFrame(() => {
+                radarContainer.style.transition = 'all 1200ms cubic-bezier(0.4, 0, 0.2, 1)';
+                radarContainer.style.transform = 'scale(0.08)';
+                radarContainer.style.top = (btnRect.top + btnRect.height/2 - radarRect.height/2) + 'px';
+                radarContainer.style.left = (btnRect.left + btnRect.width/2 - radarRect.width/2) + 'px';
+                
+                setTimeout(() => {
+                    radarContainer.style.opacity = '0';
+                }, 800);
+            });
+
+            // 4. End Phase
+            setTimeout(() => {
+                radarSection.style.display = 'none';
+                radarContainer.style.transition = '';
+                radarContainer.style.transform = '';
+                radarContainer.style.opacity = '1';
+                radarContainer.style.position = 'relative';
+                radarContainer.style.top = '';
+                radarContainer.style.left = '';
+                
+                finishScanSequence();
+            }, 1200);
+        }
+
+        function finishScanSequence() {
+            // PHASE 5
+            const scanBtn = document.getElementById('scanBtn');
+            scanBtn.classList.add('glow-animation');
+            setTimeout(() => scanBtn.classList.remove('glow-animation'), 800);
+
+            const wrapper = document.getElementById('devicesContainerWrapper');
+            wrapper.classList.remove('hidden');
+            
+            renderDeviceGrid(true); // Render with staggered delay
+            
+            // Trigger animation for each card
+            setTimeout(() => {
+                document.querySelectorAll('.card-item-ani').forEach(el => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                });
+            }, 50);
+        }
+
+        async function triggerScan() {
+            const btn = document.getElementById('scanBtn');
+            btn.disabled = true;
+            
+            // PHASE 1
+            const wrapper = document.getElementById('devicesContainerWrapper');
+            wrapper.classList.add('hidden');
+            
+            const radarSection = document.getElementById('radarSection');
+            const radarContainer = document.getElementById('radarContainer');
+            const dotsOverlay = document.getElementById('radarDots');
+            
+            dotsOverlay.innerHTML = "";
+            foundIps.clear();
+
+            // REALISM: Pre-fill radar with known devices as "Ghost Signals"
+            devices.forEach(d => addRadarDot(d, true));
+            
+            radarSection.style.display = 'flex';
+            radarSection.style.opacity = '0';
+            radarContainer.style.transform = 'scale(0.3)';
+            
+            requestAnimationFrame(() => {
+                radarSection.style.transition = 'opacity 600ms ease';
+                radarSection.style.opacity = '1';
+                radarContainer.style.transform = 'scale(1)';
+            });
+
+            scanActive = true;
+            try { 
+                await fetch('/api/scan', { method: 'POST' }); 
+                pollStatus(); 
+            } catch (err) { 
+                console.error("Scan init failed:", err); 
+                resetScanUI(); 
+            }
+        }
+
+        function pollStatus() {
+            const timer = setInterval(async () => {
+                const res = await fetch('/api/scan/status'); 
+                const state = await res.json();
+                
+                document.getElementById('progressFill').style.width = state.progress + "%";
+                document.getElementById('progressText').innerText = state.stage.toUpperCase();
+
+                // PHASE 2: Live dots on radar
+                if (state.active) {
+                    await loadData(true); // silent load to get devices list
+                    devices.forEach(d => {
+                        if (d.is_current) addRadarDot(d);
+                    });
+                }
+
+                if (!state.active) {
+                    clearInterval(timer);
+                    scanActive = false;
+                    
+                    // PHASE 3: Complete
+                    setTimeout(() => {
+                        exitRadarAnimation(); // Beings PHASE 4
+                        resetScanUI();
+                        loadData(); 
+                    }, 1500);
+                }
+            }, 1000);
+        }
+
+        function resetScanUI() { 
+            const btn = document.getElementById('scanBtn'); 
+            btn.disabled = false; 
+            document.getElementById('statusDot').className = "status-dot"; 
+            document.getElementById('progressSection').classList.remove('active'); 
         }
 
         function getDeviceEmoji(type) {
@@ -638,24 +866,11 @@
         function closeInvestigation() { document.getElementById('investigatePanel').classList.remove('active'); document.getElementById('investigateOverlay').classList.remove('active'); }
         function switchTab(name, e) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active')); document.getElementById(name+'Tab').classList.add('active'); e.target.classList.add('active'); }
 
-        async function triggerScan() {
-            const btn = document.getElementById('scanBtn'); btn.disabled = true; btn.innerText = "SWEEPING MESH...";
-            document.getElementById('statusDot').className = "status-dot scanning"; document.getElementById('progressSection').classList.add('active');
-            scanActive = true;
-            try { await fetch('/api/scan', { method: 'POST' }); pollStatus(); } catch (err) { console.error("Scan init failed:", err); resetScanUI(); }
-        }
+        document.addEventListener('DOMContentLoaded', () => { 
+            animateRadar(); 
+            loadData(); 
+        });
 
-        function pollStatus() {
-            const timer = setInterval(async () => {
-                const res = await fetch('/api/scan/status'); const state = await res.json();
-                document.getElementById('progressFill').style.width = state.progress + "%";
-                document.getElementById('progressText').innerText = state.stage.toUpperCase();
-                if (!state.active) { clearInterval(timer); resetScanUI(); loadData(); }
-            }, 1000);
-        }
-
-        function resetScanUI() { const btn = document.getElementById('scanBtn'); btn.disabled = false; btn.innerText = "INITIATE NETWORK SCAN"; document.getElementById('statusDot').className = "status-dot"; document.getElementById('progressSection').classList.remove('active'); scanActive = false; }
-        document.addEventListener('DOMContentLoaded', () => { animateRadar(); loadData(); });
         function renderReport() {
             const container = document.getElementById('reportContainer'); const total = devices.length; if (total === 0) return;
             const grades = { A: 0, B: 0, C: 0, D: 0, F: 0 }; devices.forEach(d => grades[d.grade]++);
