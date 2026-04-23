@@ -242,8 +242,11 @@ class SecurityScorecard:
 
         top_threats = [name for name, _count in threat_counter.most_common(3)]
 
+        recent_scan_count = sum(1 for d in devices if d.get("is_current"))
+
         return {
             "total_devices": len(devices),
+            "recent_scan_count": recent_scan_count,
             "grade_distribution": grade_distribution,
             "critical_count": grade_distribution["F"],
             "high_risk_count": grade_distribution["D"],

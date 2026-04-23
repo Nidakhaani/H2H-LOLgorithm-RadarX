@@ -193,9 +193,33 @@
 
         .stat-value { font-size: 28px; font-weight: 700; color: var(--primary); font-family: 'IBM Plex Mono', monospace; }
         .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-        .stat-card.critical .stat-value { color: var(--grade-f); }
-        .stat-card.high .stat-value { color: var(--grade-d); }
-        .stat-card.secure .stat-value { color: var(--grade-a); }
+        /* ─────────────────────────────────────────────── */
+        /* SECONDARY STATS ROW */
+        /* ─────────────────────────────────────────────── */
+        .secondary-stats {
+            display: flex;
+            gap: 20px;
+            padding: 10px 30px;
+            background: rgba(0, 180, 216, 0.03);
+            border-bottom: 2px solid var(--border);
+            align-items: center;
+        }
+
+        .mini-stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mini-stat strong {
+            color: var(--primary);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+        }
 
         /* ─────────────────────────────────────────────── */
         /* CINEMATIC RADAR (Feature Redesign) */
@@ -608,10 +632,22 @@
                 <div class="health-status-badge" id="healthStatusBadge">Waiting...</div>
             </div>
         </div>
-        <div class="stat-card"><div class="stat-value" id="totalDevices">--</div><div class="stat-label">Total Assets</div></div>
+        <div class="stat-card"><div class="stat-value" id="recentScanCount">--</div><div class="stat-label">Recent Scan</div></div>
         <div class="stat-card critical"><div class="stat-value" id="criticalCount">--</div><div class="stat-label">Critical (F)</div></div>
         <div class="stat-card high"><div class="stat-value" id="highCount">--</div><div class="stat-label">High Risk (D)</div></div>
         <div class="stat-card secure"><div class="stat-value" id="secureCount">--</div><div class="stat-label">Stable (A-B)</div></div>
+    </div>
+
+    <div class="secondary-stats">
+        <div class="mini-stat">
+            <span>Historical Assets Discovered:</span>
+            <strong id="totalAssets">--</strong>
+        </div>
+        <div style="flex-grow: 1;"></div>
+        <div class="mini-stat" style="opacity: 0.7;">
+            <span>System Mode:</span>
+            <strong id="systemMode" style="color: var(--text-dim);">ACTIVE</strong>
+        </div>
     </div>
 
     <!-- Cinematic Radar Section -->
@@ -799,9 +835,15 @@
         }
 
         function updateStats() {
-            const counts = { F: 0, D: 0, AB: 0 };
-            devices.forEach(d => { if (d.grade === 'F') counts.F++; else if (d.grade === 'D') counts.D++; else if (['A', 'B'].includes(d.grade)) counts.AB++; });
-            document.getElementById('totalDevices').innerText = devices.length;
+            const counts = { F: 0, D: 0, AB: 0, current: 0 };
+            devices.forEach(d => { 
+                if (d.is_current) counts.current++;
+                if (d.grade === 'F') counts.F++; 
+                else if (d.grade === 'D') counts.D++; 
+                else if (['A', 'B'].includes(d.grade)) counts.AB++; 
+            });
+            document.getElementById('recentScanCount').innerText = counts.current;
+            document.getElementById('totalAssets').innerText = devices.length;
             document.getElementById('criticalCount').innerText = counts.F;
             document.getElementById('highCount').innerText = counts.D;
             document.getElementById('secureCount').innerText = counts.AB;
@@ -1059,6 +1101,9 @@
                 
                 document.getElementById('progressFill').style.width = state.progress + "%";
                 document.getElementById('progressText').innerText = state.stage.toUpperCase();
+                if (state.active && state.devices_found > 0) {
+                    document.getElementById('recentScanCount').innerText = state.devices_found;
+                }
 
                 // PHASE 2: Live dots on radar
                 if (state.active) {
