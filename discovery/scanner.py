@@ -141,7 +141,7 @@ class NetworkScanner:
 
         # ── Tier 4: Mock demo data ────────────────────────────────────────────
         self.console.print("[cyan]Tier 4: All live methods failed — using Demo mock data.[/cyan]")
-        return self._mock_scan()
+        return self._get_mock_devices()
 
     # ──────────────────────────────────────────────────────
     # TIER 0: ICMP PING SWEEP
@@ -293,20 +293,174 @@ class NetworkScanner:
     # TIER 4: MOCK
     # ──────────────────────────────────────────────────────
 
-    def _mock_scan(self) -> list[dict]:
-        """Demo simulation — 8 realistic IoT device profiles."""
-        mock_devices = [
-            ("192.168.1.1",   "C0:FF:EE:00:01:01", "Router"),
-            ("192.168.1.101", "A4:C3:F0:00:01:02", "iPhone"),
-            ("192.168.1.102", "8C:79:F5:00:01:03", "Smart-TV"),
-            ("192.168.1.103", "BC:AD:28:00:01:04", "IP-Camera"),
-            ("192.168.1.104", "F8:CA:B8:00:01:05", "Dell-Laptop"),
-            ("192.168.1.105", "50:C7:BF:00:01:06", "Smart-Bulb"),
-            ("192.168.1.106", "3C:D9:2B:00:01:07", "HP-Printer"),
-            ("192.168.1.107", "00:11:22:00:01:08", "Unknown-IoT"),
+    def _get_mock_devices(self) -> list[dict]:
+        """Demo simulation — 7 high-impact IoT device profiles."""
+        now = datetime.datetime.now().isoformat()
+        return [
+            {
+                "ip": "192.168.1.1",
+                "ip_address": "192.168.1.1",
+                "device_type": "Wireless Router",
+                "manufacturer": "Cisco Systems",
+                "hostname": "cisco-gateway",
+                "mac": "A4:C3:F0:85:1D:22",
+                "mac_address": "A4:C3:F0:85:1D:22",
+                "open_ports": [443, 80],
+                "risk_flags": [],
+                "risk_score": 8,
+                "grade": "A",
+                "remediation": [
+                    "Router is secure ✅",
+                    "Keep firmware updated monthly 🗓️",
+                    "Re-scan quarterly to stay safe"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            },
+            {
+                "ip": "192.168.1.14",
+                "ip_address": "192.168.1.14",
+                "device_type": "MacBook Pro",
+                "manufacturer": "Apple Inc.",
+                "hostname": "nidas-macbook",
+                "mac": "F8:FF:C2:11:AB:44",
+                "mac_address": "F8:FF:C2:11:AB:44",
+                "open_ports": [443],
+                "risk_flags": [],
+                "risk_score": 5,
+                "grade": "B",
+                "remediation": [
+                    "Device is clean ✅",
+                    "Keep macOS updated",
+                    "Enable FileVault disk encryption if not already"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            },
+            {
+                "ip": "192.168.1.45",
+                "ip_address": "192.168.1.45",
+                "device_type": "Network Printer",
+                "manufacturer": "HP Inc.",
+                "hostname": "hp-laserjet-pro",
+                "mac": "D4:85:64:A1:33:FC",
+                "mac_address": "D4:85:64:A1:33:FC",
+                "open_ports": [80, 443, 9100],
+                "risk_flags": ["Unencrypted print port open"],
+                "risk_score": 32,
+                "grade": "B",
+                "remediation": [
+                    "Disable port 9100 if network printing not needed 🖨️",
+                    "Enable printer password protection",
+                    "Update printer firmware"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            },
+            {
+                "ip": "192.168.1.88",
+                "ip_address": "192.168.1.88",
+                "device_type": "IP Camera",
+                "manufacturer": "Hikvision",
+                "hostname": "hikvision-cam-01",
+                "mac": "C0:56:E3:12:44:AB",
+                "mac_address": "C0:56:E3:12:44:AB",
+                "open_ports": [80, 554, 8000],
+                "risk_flags": [
+                    "RTSP stream exposed",
+                    "HTTP admin on port 80"
+                ],
+                "risk_score": 55,
+                "grade": "C",
+                "remediation": [
+                    "Restrict RTSP stream to local network only 📷",
+                    "Change default camera admin password immediately",
+                    "Disable port 8000 remote access",
+                    "Update Hikvision firmware"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            },
+            {
+                "ip": "192.168.1.128",
+                "ip_address": "192.168.1.128",
+                "device_type": "Old Windows PC",
+                "manufacturer": "Dell Inc.",
+                "hostname": "dell-desktop-old",
+                "mac": "00:26:B9:AA:11:34",
+                "mac_address": "00:26:B9:AA:11:34",
+                "open_ports": [80, 135, 139, 445],
+                "risk_flags": [
+                    "SMB port 445 open — ransomware risk",
+                    "NetBIOS exposed on port 139",
+                    "Outdated OS suspected"
+                ],
+                "risk_score": 68,
+                "grade": "D",
+                "remediation": [
+                    "Disable SMB port 445 if file sharing not needed 🚨",
+                    "Block NetBIOS ports 135 and 139 on firewall",
+                    "Update Windows OS immediately",
+                    "Run full antivirus scan"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            },
+            {
+                "ip": "192.168.1.141",
+                "ip_address": "192.168.1.141",
+                "device_type": "IP Camera",
+                "manufacturer": "Unknown (No-brand)",
+                "hostname": "unknown-device-141",
+                "mac": "DE:AD:BE:EF:00:01",
+                "mac_address": "DE:AD:BE:EF:00:01",
+                "open_ports": [23, 80, 554, 8080],
+                "risk_flags": [
+                    "Telnet port 23 open — CRITICAL unencrypted access",
+                    "Unknown manufacturer — possibly counterfeit",
+                    "Default credentials confirmed",
+                    "RTSP stream unsecured"
+                ],
+                "risk_score": 91,
+                "grade": "F",
+                "remediation": [
+                    "ISOLATE this device from network immediately 🔴",
+                    "Telnet port 23 is critical — disable or block NOW",
+                    "Device manufacturer unknown — treat as hostile",
+                    "Do not reconnect until fully audited",
+                    "Consider replacing with trusted brand device"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            },
+            {
+                "ip": "192.168.1.155",
+                "ip_address": "192.168.1.155",
+                "device_type": "Industrial IoT Sensor",
+                "manufacturer": "Generic (Unverified)",
+                "hostname": "iot-sensor-155",
+                "mac": "BA:DC:0D:E0:00:FF",
+                "mac_address": "BA:DC:0D:E0:00:FF",
+                "open_ports": [21, 23, 1883, 8080],
+                "risk_flags": [
+                    "Telnet port 23 open — CRITICAL",
+                    "FTP port 21 open — unencrypted",
+                    "MQTT port 1883 open — no authentication",
+                    "Unverified manufacturer"
+                ],
+                "risk_score": 96,
+                "grade": "F",
+                "remediation": [
+                    "DISCONNECT immediately — multiple critical ports 🔴🚨",
+                    "MQTT port 1883 with no auth is a severe risk",
+                    "Telnet + FTP combo = completely unsecured device",
+                    "Replace with authenticated MQTT (port 8883)",
+                    "Report device to network administrator"
+                ],
+                "scan_method": "Mock Scan",
+                "timestamp": now
+            }
         ]
-        return [self._create_device_dict(ip, mac, "Mock Scan", hostname)
-                for ip, mac, hostname in mock_devices]
 
     # ──────────────────────────────────────────────────────
     # HELPERS
@@ -353,14 +507,13 @@ class NetworkScanner:
         """Scan common ports — returns {port_int: service_name} for open ports."""
         # Mock port profiles (for demo/fallback IPs)
         mock_profiles = {
-            "192.168.1.1":   {22: "SSH", 80: "HTTP", 443: "HTTPS"},
-            "192.168.1.101": {5353: "mDNS"},
-            "192.168.1.102": {1900: "UPnP", 8080: "HTTP-Alt"},
-            "192.168.1.103": {23: "Telnet", 80: "HTTP", 554: "RTSP"},
-            "192.168.1.104": {22: "SSH", 443: "HTTPS", 5353: "mDNS"},
-            "192.168.1.105": {1883: "MQTT", 1900: "UPnP"},
-            "192.168.1.106": {80: "HTTP", 631: "IPP", 9100: "Printer-RAW"},
-            "192.168.1.107": {23: "Telnet", 80: "HTTP"},
+            "192.168.1.1":   {80: "HTTP", 443: "HTTPS"},
+            "192.168.1.14":  {443: "HTTPS"},
+            "192.168.1.45":  {80: "HTTP", 443: "HTTPS", 9100: "Printer-RAW"},
+            "192.168.1.88":  {80: "HTTP", 554: "RTSP", 8000: "HTTP-Alt"},
+            "192.168.1.128": {80: "HTTP", 135: "RPC", 139: "NetBIOS", 445: "SMB"},
+            "192.168.1.141": {23: "Telnet", 80: "HTTP", 554: "RTSP", 8080: "HTTP-Alt"},
+            "192.168.1.155": {21: "FTP", 23: "Telnet", 1883: "MQTT", 8080: "HTTP-Alt"},
         }
 
         if ip in mock_profiles:

@@ -849,6 +849,19 @@
             document.getElementById('secureCount').innerText = counts.AB;
         }
 
+        function resetStatsUI() {
+            document.getElementById('healthDisplayValue').innerText = "0%";
+            document.getElementById('healthRing').style.strokeDashoffset = 226.19;
+            document.getElementById('healthStatusBadge').innerText = "SCANNING...";
+            document.getElementById('healthStatusBadge').className = "health-status-badge";
+            document.getElementById('healthStatusBadge').style.background = "var(--muted)";
+            
+            document.getElementById('recentScanCount').innerText = "0";
+            document.getElementById('criticalCount').innerText = "0";
+            document.getElementById('highCount').innerText = "0";
+            document.getElementById('secureCount').innerText = "0";
+        }
+
         function updateHealthScore() {
             const display = document.getElementById('healthDisplayValue');
             const ring = document.getElementById('healthRing');
@@ -1062,7 +1075,7 @@
             
             // PHASE 1
             const wrapper = document.getElementById('devicesContainerWrapper');
-            wrapper.classList.add('hidden');
+            // We keep the wrapper visible (removing the .hidden logic) so the user can see previous data
             
             const radarSection = document.getElementById('radarSection');
             const radarContainer = document.getElementById('radarContainer');
@@ -1073,6 +1086,10 @@
 
             // REALISM: Pre-fill radar with known devices as "Ghost Signals"
             devices.forEach(d => addRadarDot(d, true));
+            
+            // Now clear for fresh scan state
+            devices = []; 
+            resetStatsUI();
             
             radarSection.style.display = 'flex';
             radarSection.style.opacity = '0';
